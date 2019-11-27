@@ -1,57 +1,106 @@
 import telebot
 from bot.keyboard import *
 from bot.config import TG_TOKEN
+from bot.admin_functions import *
 
 bot = telebot.TeleBot(f'{TG_TOKEN}')
-man = "admin"
-
-@bot.message_handler(content_types=['text'])
-def main(message):
-    user_id = message.from_user.id
-    #man = identefication(user_id)
-
-    if man == 'admin':
-        admin_func(message)
-
-    elif man == 'pupil':
-        pupil_func(message)
-
-    else:
-        null_func(message)
-
-def admin_func(message): # Работа с учителем
-    admin_keyboard = keyboard_admin()
-    bot.send_message(message.from_user.id, text="Здраствуйте! Что вы хотели бы сделать?", reply_markup=admin_keyboard)
-    if message.text == '/add_activity':
-        bot.register_next_step_handler(message, add_activity)
-    elif message.text == '/activities':
-        pass
-    elif message.text == '/add_access':
-        pass # сгенирировать код
-    elif message.text == '/del_activity':
-        pass # удалить активность
-
-def pupil_func(message):
-    pupil_keyboard = keyboard_pupil()
-    if message.text == '/start':
-        bot.send_message(message.from_user.id, text="Привет!", reply_markup=pupil_keyboard)
-    elif message.text == '/subscribe':
-        pupil_change_act = keyboard_pupil_change()
-        bot.send_message(message.from_user.id,text="Выбери активности которые тебе интересны!", reply_markup=pupil_change_act)
-    elif message.text == '/shownews':
-        pass # Вывести все новости по подпискам
-
-def null_func(message): # хз кто такой
-    bot.send_message(message.from_user.id, text="Привет, тебя нет в базе. Введи код, который тебе выдали.")
-    input_code = message.text
 
 def identefication(id):
     pass
 
+# Начало работы с учителем (admin)
+@bot.message_handler(commands=['add_activity']) # Добавляем активность
 def add_activity(message):
-    bot.send_message(message.from_user.id, text="Введите название активности:")
+    user_id = message.from_user.id
+    man = identefication(user_id)
 
-    name = message.text
-    print(name)
+    if man == 'admin':
+        bot.send_message(
+            user_id,
+            text="Введите название активности:")
+        pass
+    else:
+        bot.send_message(user_id, text="У вас нет прав на выполнение данной операции!")
+
+@bot.message_handler(commands=['activities']) # Показываем все активности
+def list_acts(message):
+    user_id = message.from_user.id
+    man = identefication(user_id)
+
+    if man == 'admin':
+        pass
+    else:
+        bot.send_message(user_id, text="У вас нет прав на выполнение данной операции!")
+
+@bot.message_handler(commands=['add_access']) # Даем доступ ученику
+def add_access(message):
+    user_id = message.from_user.id
+    man = identefication(user_id)
+
+    if man == 'admin':
+        pass
+    else:
+        bot.send_message(user_id, text="У вас нет прав на выполнение данной операции!")
+
+@bot.message_handler(commands=['del_activity']) # Удаляем активность
+def del_activity(message):
+    user_id = message.from_user.id
+    man = identefication(user_id)
+
+    if man == 'admin':
+        pass
+    else:
+        bot.send_message(user_id, text="У вас нет прав на выполнение данной операции!")
+# Конец работы с учителем (admin)
+#
+# Начало работы с учеником(pupil)
+@bot.message_handler(commands=['subscribe']) # Подписаться на мероприятие
+def subscribe(message):
+    user_id = message.from_user.id
+    man = identefication(user_id)
+
+    if man == 'pupil':
+        pass
+    else:
+        bot.send_message(user_id, text="У вас нет прав на выполнение данной операции!")
+
+@bot.message_handler(commands=['shownews']) # Показать новости по подпискам
+def shownews(message):
+    user_id = message.from_user.id
+    man = identefication(user_id)
+
+    if man == 'pupil':
+        pass
+    else:
+        bot.send_message(user_id, text="У вас нет прав на выполнение данной операции!")
+# Конец работы с учеником (pupil)
+#
+# Начало работы с ноунэймом (noname)
+@bot.message_handler(commands=['enter'])
+def enter(message):
+    user_id = message.from_user.id
+    man = identefication(user_id)
+
+    if man == 'noname':
+        bot.send_message(message.from_user.id, text="Введи код, который тебе дала вожатая")
+        pass
+    else:
+        bot.send_message(user_id, text="Ты уже авторизован!")
+# Конец работы с ноунэймом (noname)
+@bot.message_handler(commands=['start'])
+def start(message):
+    user_id = message.from_user.id
+    man = identefication(user_id)
+
+    if man == 'admin':
+        admin_keyboard = keyboard_admin()
+        bot.send_message(message.from_user.id, text="Здраствуйте! Что вы хотели бы сделать?", reply_markup=admin_keyboard)
+
+    elif man == 'pupil':
+        pupil_keyboard = keyboard_pupil()
+        bot.send_message(message.from_user.id, text="Привет!", reply_markup=pupil_keyboard)
+    else:
+        noname_keyboard = noname_kbd()
+        bot.send_message(message.from_user.id, text="Привет, тебя нет в базе. Нажми на кнопку ниже для аутентификации.",reply_markup=noname_keyboard)
 
 bot.polling(none_stop=True, interval=0)
