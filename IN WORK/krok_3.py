@@ -6,7 +6,7 @@ wsSearch=wbSearch.active
 lookfor_1="white_list"
 lookfor_2="admin"
 
-def kostya(id):
+def identification(id):
     for i in range(1,21): #вместо 21 можно взять любое число
         value=wsSearch.cell(row=i,column=1).value
         if value== id:
