@@ -14,7 +14,7 @@ def kostya(id):
             if id_status==lookfor_2:
                 return("admin")
             elif id_status==lookfor_1:
-                return ("pupile")
+                return ("pupil")
         else:
-            return (None)
+            return ("noname")
 
