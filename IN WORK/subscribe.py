@@ -10,8 +10,8 @@ def subscribe(id,activ):
         if value==id:
             value_activities=wsSearch.cell(row=value.row,column=5).value
             if value_activities == None:
-                value_activities=wsSearch.cell(row=value.row,column=5).value=activ
+                wsSearch.cell(row=value.row,column=5).value=activ
             elif value_activities != None:
                 row =kolichestvo+1
-                value_activities = wsSearch.cell(row=row,column=5).value=activ
+                wsSearch.cell(row=row,column=5).value=activ
             
