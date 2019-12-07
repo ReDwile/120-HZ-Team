@@ -6,8 +6,8 @@ wsSearch=wbSearch.active
 def todb(id,name,lastname):
     maxrow = wsSearch.max_row
     row =maxrow+1
-    id_value=wsSearch.cell(row=row, column=1).value=id
-    name_value = wsSearch.cell(row=row, column=3).value = name
-    lastname_value = wsSearch.cell(row=row, column=4).value = lastname
+    wsSearch.cell(row=row, column=1).value=id
+    wsSearch.cell(row=row, column=3).value = name
+    wsSearch.cell(row=row, column=4).value = lastname
 
 
