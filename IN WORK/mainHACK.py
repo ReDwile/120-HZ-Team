@@ -33,38 +33,42 @@ def db():
 
 def getacts():
     kolichestvo = wsSearch.max_row
+    activities=[]
     for i in range(1,kolichestvo):
         value=wsSearch.cell(row=i,column=5).value
-        activities = []
-        #activities.append(wsSearch.cell(row=value.row,column=5).value)
+        activities.append(wsSearch.cell(row=value.row,column=5).value)
         set(activities)
-        return(activities)
+    return activities
 
 def getnames(ID):
+    z = None
+    name_status=None
     for i in range(1,kolichestvo):
         value=wsSearch.cell(row=i,column=1).value
         if value== ID:
             value = str(value)
             name_status=wsSearch.cell(row=value.row,column=3).value
             lastname_status=wsSearch.cell(row=value.row,column=4).value
-            return (name_status+","+lastname_status)
-        else:
-            return (None)
+    if name_status!=None:
+        return (name_status+","+lastname_status)
+
+    return z
 
 def GetUserActs(ID):
     kolichestvo = wsSearch.max_row
+    activities=[]
+    zero=[]
     for i in range(1,kolichestvo):
         value=wsSearch.cell(row=i,column=1).value
-        zero=[]
-        activities=[]
+
         if value== ID:
             value = str(value)
             activities.append(wsSearch.cell(row=value.row,column=5).value)
 
-        if zero ==activities:
-            return None
-        else:
-            return activities
+    if zero ==activities:
+        return None
+    else:
+        return activities
 
 def identy(ID):
     status = "noname"
