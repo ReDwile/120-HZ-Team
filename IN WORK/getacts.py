@@ -10,3 +10,4 @@ def getacts(id):
         activities = []
         activities.append(wsSearch.cell(row=value.row,column=5).value)
         set(activities)
+        return(activities)
