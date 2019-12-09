@@ -1,19 +1,18 @@
-import telebot
-from bot.classes import *
-from bot.keyboard import *
 from bot.function import *
-from telebot import apihelper
+from bot.keyboard import *
 
-#sendkbd = send_message_kbd()
+Man = Person
+
 del_act_kbd = del_act_kb()
 pupil_kbd = p_k()
 admin_kbd = a_k()
 nn_kbd = n_k()
 sendkbd = send_message_kbd()
+activities_kbd = sub()
+desub_kbd = desub()
 
 @bot.message_handler(commands=['start'])  # Тут все ок и работает
 def start(message):
-    Man = Person()
     Man.ID = message.from_user.id
     Man.man = identy(Man.ID)
 
@@ -35,59 +34,67 @@ def start(message):
 
 @bot.message_handler(content_types=['text'])
 def text(message):
-    Man = Person()
     Man.ID = message.from_user.id
     Man.man = identy(Man.ID)
     if Man.man == "noname":
         Man.name = message.from_user.first_name
         Man.lastname = message.from_user.last_name
+        nn_f(message, Man)
     else:
         Man.acts = GetUserActs(Man.ID)
         Man.name = getnames(Man.ID)
         Man.lastname = getSnames(Man.ID)
-###############################################################################
+        if Man.man == "admin":
+            admin_f(message, Man)
+        elif Man.man == "pupil":
+            pupil_f(message, Man)
+
+
+def nn_f(message, Man):
     if Man.man == "noname":
         if message.text == "Регистрация":  #Регистрация ноунэйма(работает)
                 bot.send_message(Man.ID, text="Введи код приглашения")
+                bot.register_next_step_handler(message, checkcode)
 
-        elif message.text[0] == "$":  # Работает
-            if Man.man != "noname":
-                bot.send_message(Man.ID, text="Ты уже зарегистрирован!")
-            elif message.text == codegen():
-                todb(Man.ID, Man.name, Man.lastname)
-                bot.send_message(Man.ID, text="Поздравляю, ты зарегистрирован!")
-            else:
-                bot.send_message(Man.ID, text="Ты ввел неверный код!")
-#######################################################################################
+
+def pupil_f(message, Man):
     if Man.man == "pupil":
         if message.text == "Покажи мои активности":  # Вроде работает
             try:
-                bot.send_message(Man.ID,  '\n'.join(GetUserActs(Man.ID)))
-            except TypeError:
+                bot.send_message(Man.ID,  '\n'.join(GetUserActs(Man.ID)),reply_markup=startkbd )
+            except:
                 bot.send_message(Man.ID, "У тебя нет активностей!")
 
-        elif message.text == "Подписаться на активность": # В рвзработке
+        elif message.text == "Подписаться на активность": # Работает
             bot.send_message(Man.ID, text="Держи!\n\n", reply_markup=activities_kbd)
             bot.register_next_step_handler(message, subscribe)
-######################################################################################
+
+        elif message.text == "Отписаться от активности":
+            bot.send_message(Man.ID, text="Выбери активности от которых хочешь отписаться:", reply_markup=desub_kbd)
+            bot.register_next_step_handler(message, desub)
+
+
+def admin_f(message, Man):
     if Man.man == "admin":
         if message.text == "Добавить активность":  # Работает
             bot.send_message(Man.ID, text="Введите название:")
             bot.register_next_step_handler(message, add_act)
 
-        elif message.text == "Удалить активность":   # Пока крашится
+        elif message.text == "Удалить активность":   # Работает
             bot.send_message(Man.ID, "Выберите активность, которую хотите удалить:", reply_markup=del_act_kbd)
             bot.register_next_step_handler(message, del_act)
 
         elif message.text == "Посмотреть активности":  # С багом, но работает
             try:
-                bot.send_message(Man.ID, '\n'.join(getacts()))
+                bot.send_message(Man.ID, '\n'.join(getacts()), reply_markup=startkbd)
             except:
-                bot.send_message(Man.ID, "Прости! Я опять сломался :( Но надеюсь скоро починят)")
+                bot.send_message(Man.ID, "Активностей нет!")
 
-        elif message.text == "Отправить сообщение": # Пока крашится
+        elif message.text == "Отправить сообщение":  #Работает
             bot.send_message(Man.ID, "Какой группе вы хотите отправить сообщение?:", reply_markup=sendkbd)
             bot.register_next_step_handler(message, send)
+
+
 
 bot.polling(none_stop=True)
 

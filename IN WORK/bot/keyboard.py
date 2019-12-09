@@ -1,34 +1,44 @@
 from telebot import types
 from bot.function import *
 
-def sub():
-    activities_kbd = types.InlineKeyboardMarkup()
+def desub():
+    activities_kbd = types.ReplyKeyboardMarkup()
     acts = getacts()
-    kacts = []
-    n = len(acts)+1
-    #for i in range(1, n, 1):
-    #   kacts.append(types.InlineKeyboardButton(text=acts[i], callback_data=acts[i]))
-    #activities_kbd.add(*kacts)
+    k = len(acts)
+    row = types.KeyboardButton("Отписаться от всех активностей")
+    activities_kbd.add(row)
+    for i in range(0, k):
+        row = types.KeyboardButton(f'{acts[i]}')
+        activities_kbd.add(row)
+    return activities_kbd
+
+def sub():
+    activities_kbd = types.ReplyKeyboardMarkup()
+    acts = getacts()
+    k = len(acts)
+    for i in range(0, k):
+        row = types.KeyboardButton(f'{acts[i]}')
+        activities_kbd.add(row)
+    return activities_kbd
 
 def send_message_kbd():
     acts = getacts()
-    actss = []
     k = len(acts)
-    send_kbd = types.InlineKeyboardMarkup()
+    send_kbd = types.ReplyKeyboardMarkup()
+    row = types.KeyboardButton("Всем")
+    send_kbd.add(row)
     for i in range(0, k):
-        actss.append(types.InlineKeyboardButton(text=acts[i], callback_data=acts[i]))
-    send_kbd.add(types.InlineKeyboardButton("Всем", callback_data='everyone'))
-    send_kbd.add(*actss)
+        row = types.KeyboardButton(f'{acts[i]}')
+        send_kbd.add(row)
     return send_kbd
 
 def del_act_kb(): # Высвечивает все активности для удаления
     acts = getacts()
-    actss = []
     k = len(acts)
-    del_kbd = types.InlineKeyboardMarkup()
+    del_kbd = types.ReplyKeyboardMarkup()
     for i in range(0, k):
-        actss.append(types.InlineKeyboardButton(text=acts[i], callback_data=acts[i]))
-    del_kbd.add(*actss)
+        row = types.KeyboardButton(f'{acts[i]}')
+        del_kbd.add(row)
     return del_kbd
 
 def p_k(): #pupil
@@ -56,3 +66,4 @@ def n_k(): #noname
     row3 = types.KeyboardButton("Регистрация")
     nn_kbd.row(row3)
     return nn_kbd
+
