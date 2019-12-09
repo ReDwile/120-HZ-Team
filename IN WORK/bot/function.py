@@ -25,6 +25,13 @@ lookfor_1="pupil"
 lookfor_2="admin"
 kolichestvo = wsSearch.max_row
 
+def getVkId(ID):
+    kolichestvo = wsSearch.max_row + 1
+    for i in range(1, kolichestvo):
+        value = wsSearch.cell(row=i, column=1).value
+        if value == ID:
+            return wsSearch.cell(row=i, column=6).value
+
 def nonone(a): # Удаление повторений в масссиве
     n = []
     for i in a:
@@ -34,7 +41,7 @@ def nonone(a): # Удаление повторений в масссиве
 
 def codegen():
     ran=random.randint(10000, 99999)
-    return ran
+    return '$12345'
 
 def db():
     for sheet in wb:
@@ -112,17 +119,20 @@ def subscribe(message):
         wsSearch.cell(row = kolichestvo, column=2).value = identy(id)
         wsSearch.cell(row=kolichestvo, column=3).value = getnames(id)
         wsSearch.cell(row=kolichestvo, column=4).value = getSnames(id)
+        wsSearch.cell(row=kolichestvo, column=4).value = getVkId(id)
         wb.save("Data/test.xlsx")
         bot.send_message(id, 'Успешно!', reply_markup=startkbd)
 
-def todb(ID, name, lastname):
+def todb():
     maxrow = wsSearch.max_row
     Row =maxrow+1
-    wsSearch.cell(row=Row, column=1).value = ID
+    wsSearch.cell(row=Row, column=1).value = Man.ID
     wsSearch.cell(row=Row, column=2).value = "pupil"
-    wsSearch.cell(row=Row, column=3).value = name
-    wsSearch.cell(row=Row, column=4).value = lastname
+    wsSearch.cell(row=Row, column=3).value = Man.name
+    wsSearch.cell(row=Row, column=4).value = Man.lastname
+    wsSearch.cell(row=Row, column=6).value = Man.VK_ID
     wb.save("Data/test.xlsx")
+    bot.send_message(Man.ID, "Успешно!", reply_markup=startkbd)
 
 def add_act(message):
     name = message.text
@@ -166,12 +176,10 @@ def checkcode(message):
     inputCode = message.text
 
     Man.ID = message.from_user.id
-    Man.name = message.from_user.first_name
-    Man.lastname = message.from_user.last_name
 
     if inputCode == codegen():
-        todb(Man.ID, Man.name, Man.lastname)
-        bot.send_message(Man.ID, text="Поздравляю, ты зарегистрирован!", reply_markup=startkbd)
+        bot.send_message(Man.ID, "Введи свое имя:")
+        bot.register_next_step_handler(message, input_name)
     else:
         bot.send_message(Man.ID, text="Ты ввел неверный код!", reply_markup=startkbd)
 
@@ -193,3 +201,18 @@ def desub(message):
         bot.send_message(Man.ID, "Успех!", reply_markup=startkbd)
     else:
         bot.send_message(Man.ID, "Ошибка! Ты не подписан ни на одну активность!", reply_markup=startkbd)
+
+def input_name(message):
+    Man.name = message.text
+    bot.send_message(Man.ID, "Введи свою фамилию:")
+    bot.register_next_step_handler(message, input_surname)
+
+def input_surname(message):
+    Man.lastname = message.text
+    bot.send_message(Man.ID, "Введи свой VK ID (Без @)")
+    bot.register_next_step_handler(message, Input_VK_ID)
+
+def Input_VK_ID(message):
+    Man.VK_ID = message.text
+    todb()
+

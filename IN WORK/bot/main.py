@@ -16,15 +16,6 @@ def start(message):
     Man.ID = message.from_user.id
     Man.man = identy(Man.ID)
 
-    if Man.man == "noname":
-        Man.name = message.from_user.first_name
-        Man.lastname = message.from_user.last_name
-    else:
-        Man.acts = GetUserActs(Man.ID)
-        temp = getnames(Man.ID).split(',')
-        Man.name = getnames(Man.ID)
-        Man.lastname = getSnames(Man.ID)
-
     if Man.man == "pupil":
         bot.send_message(Man.ID, text="Вот функции, доступные тебе:", reply_markup=pupil_kbd)
     elif Man.man == "noname":
@@ -37,13 +28,12 @@ def text(message):
     Man.ID = message.from_user.id
     Man.man = identy(Man.ID)
     if Man.man == "noname":
-        Man.name = message.from_user.first_name
-        Man.lastname = message.from_user.last_name
         nn_f(message, Man)
     else:
         Man.acts = GetUserActs(Man.ID)
         Man.name = getnames(Man.ID)
         Man.lastname = getSnames(Man.ID)
+        Man.VK_ID = getVkId(Man.ID)
         if Man.man == "admin":
             admin_f(message, Man)
         elif Man.man == "pupil":
@@ -51,10 +41,9 @@ def text(message):
 
 
 def nn_f(message, Man):
-    if Man.man == "noname":
-        if message.text == "Регистрация":  #Регистрация ноунэйма(работает)
-                bot.send_message(Man.ID, text="Введи код приглашения")
-                bot.register_next_step_handler(message, checkcode)
+    if message.text == "Регистрация":  #Регистрация ноунэйма(работает)
+            bot.send_message(Man.ID, text="Введи код приглашения")
+            bot.register_next_step_handler(message, checkcode)
 
 
 def pupil_f(message, Man):
