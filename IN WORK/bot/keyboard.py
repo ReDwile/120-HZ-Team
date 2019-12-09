@@ -66,4 +66,3 @@ def n_k(): #noname
     row3 = types.KeyboardButton("Регистрация")
     nn_kbd.row(row3)
     return nn_kbd
-

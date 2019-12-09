@@ -33,7 +33,6 @@ def text(message):
         Man.acts = GetUserActs(Man.ID)
         Man.name = getnames(Man.ID)
         Man.lastname = getSnames(Man.ID)
-        Man.VK_ID = getVkId(Man.ID)
         if Man.man == "admin":
             admin_f(message, Man)
         elif Man.man == "pupil":
@@ -47,45 +46,40 @@ def nn_f(message, Man):
 
 
 def pupil_f(message, Man):
-    if Man.man == "pupil":
-        if message.text == "Покажи мои активности":  # Вроде работает
-            try:
-                bot.send_message(Man.ID,  '\n'.join(GetUserActs(Man.ID)),reply_markup=startkbd )
-            except:
-                bot.send_message(Man.ID, "У тебя нет активностей!")
+    if message.text == "Покажи мои активности":  # Вроде работает
+        try:
+            bot.send_message(Man.ID,  '\n'.join(GetUserActs(Man.ID)),reply_markup=startkbd )
+        except:
+            bot.send_message(Man.ID, "У тебя нет активностей!")
 
-        elif message.text == "Подписаться на активность": # Работает
-            bot.send_message(Man.ID, text="Держи!\n\n", reply_markup=activities_kbd)
-            bot.register_next_step_handler(message, subscribe)
+    elif message.text == "Подписаться на активность": # Работает
+        bot.send_message(Man.ID, text="Держи!\n\n", reply_markup=activities_kbd)
+        bot.register_next_step_handler(message, subscribe)
 
-        elif message.text == "Отписаться от активности":
-            bot.send_message(Man.ID, text="Выбери активности от которых хочешь отписаться:", reply_markup=desub_kbd)
-            bot.register_next_step_handler(message, desub)
+    elif message.text == "Отписаться от активности":
+        bot.send_message(Man.ID, text="Выбери активности от которых хочешь отписаться:", reply_markup=desub_kbd)
+        bot.register_next_step_handler(message, desub)
 
 
 def admin_f(message, Man):
-    if Man.man == "admin":
-        if message.text == "Добавить активность":  # Работает
-            bot.send_message(Man.ID, text="Введите название:")
-            bot.register_next_step_handler(message, add_act)
+    if message.text == "Добавить активность":  # Работает
+        bot.send_message(Man.ID, text="Введите название:")
+        bot.register_next_step_handler(message, add_act)
 
-        elif message.text == "Удалить активность":   # Работает
-            bot.send_message(Man.ID, "Выберите активность, которую хотите удалить:", reply_markup=del_act_kbd)
-            bot.register_next_step_handler(message, del_act)
+    elif message.text == "Удалить активность":   # Работает
+        bot.send_message(Man.ID, "Выберите активность, которую хотите удалить:", reply_markup=del_act_kbd)
+        bot.register_next_step_handler(message, del_act)
 
-        elif message.text == "Посмотреть активности":  # С багом, но работает
-            try:
-                bot.send_message(Man.ID, '\n'.join(getacts()), reply_markup=startkbd)
-            except:
-                bot.send_message(Man.ID, "Активностей нет!")
+    elif message.text == "Посмотреть активности":  # С багом, но работает
+        try:
+            bot.send_message(Man.ID, '\n'.join(getacts()), reply_markup=startkbd)
+        except:
+            bot.send_message(Man.ID, "Активностей нет!")
 
-        elif message.text == "Отправить сообщение":  #Работает
-            bot.send_message(Man.ID, "Какой группе вы хотите отправить сообщение?:", reply_markup=sendkbd)
-            bot.register_next_step_handler(message, send)
+    elif message.text == "Отправить сообщение":  #Работает
+        bot.send_message(Man.ID, "Какой группе вы хотите отправить сообщение?:", reply_markup=sendkbd)
+        bot.register_next_step_handler(message, send)
 
 
 
 bot.polling(none_stop=True)
-
-
-

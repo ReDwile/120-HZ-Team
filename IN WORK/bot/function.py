@@ -119,7 +119,6 @@ def subscribe(message):
         wsSearch.cell(row = kolichestvo, column=2).value = identy(id)
         wsSearch.cell(row=kolichestvo, column=3).value = getnames(id)
         wsSearch.cell(row=kolichestvo, column=4).value = getSnames(id)
-        wsSearch.cell(row=kolichestvo, column=4).value = getVkId(id)
         wb.save("Data/test.xlsx")
         bot.send_message(id, 'Успешно!', reply_markup=startkbd)
 
@@ -130,7 +129,6 @@ def todb():
     wsSearch.cell(row=Row, column=2).value = "pupil"
     wsSearch.cell(row=Row, column=3).value = Man.name
     wsSearch.cell(row=Row, column=4).value = Man.lastname
-    wsSearch.cell(row=Row, column=6).value = Man.VK_ID
     wb.save("Data/test.xlsx")
     bot.send_message(Man.ID, "Успешно!", reply_markup=startkbd)
 
@@ -209,10 +207,4 @@ def input_name(message):
 
 def input_surname(message):
     Man.lastname = message.text
-    bot.send_message(Man.ID, "Введи свой VK ID (Без @)")
-    bot.register_next_step_handler(message, Input_VK_ID)
-
-def Input_VK_ID(message):
-    Man.VK_ID = message.text
     todb()
-
