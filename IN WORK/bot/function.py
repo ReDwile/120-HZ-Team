@@ -13,7 +13,6 @@ def start_kbd():
     return st
 
 
-
 Mes = sm
 Man = Person
 startkbd = start_kbd()
@@ -25,12 +24,6 @@ lookfor_1="pupil"
 lookfor_2="admin"
 kolichestvo = wsSearch.max_row
 
-def getVkId(ID):
-    kolichestvo = wsSearch.max_row + 1
-    for i in range(1, kolichestvo):
-        value = wsSearch.cell(row=i, column=1).value
-        if value == ID:
-            return wsSearch.cell(row=i, column=6).value
 
 def nonone(a): # Удаление повторений в масссиве
     n = []
@@ -39,7 +32,7 @@ def nonone(a): # Удаление повторений в масссиве
             n.append(i)
     return n
 
-def codegen():
+def codegen():  #Не допилена
     ran=random.randint(10000, 99999)
     return '$12345'
 
@@ -63,7 +56,7 @@ def GetUserActs(ID):
     if zero == activities:
         return None
     else:
-        return activities
+        return nonone(activities)
 
 def getacts():
     kolichestvo = wsSearch.max_row + 1
@@ -111,20 +104,32 @@ def subscribe(message):
     useracts = GetUserActs(id)
     activ = message.text
     kolichestvo = wsSearch.max_row + 1
+    a = False
     if activ in useracts:
         bot.send_message(id, 'Ошибка! Ты уже зарегистрирован на эту активность',  reply_markup=startkbd)
     else:
-        wsSearch.cell(row = kolichestvo, column=1).value = id
-        wsSearch.cell(row = kolichestvo, column=5).value = activ
-        wsSearch.cell(row = kolichestvo, column=2).value = identy(id)
-        wsSearch.cell(row=kolichestvo, column=3).value = getnames(id)
-        wsSearch.cell(row=kolichestvo, column=4).value = getSnames(id)
+        for i in range(1, kolichestvo):
+            if wsSearch.cell(row = i, column=1).value == id:
+                if wsSearch.cell(row = i, column=5).value == "" or wsSearch.cell(row = kolichestvo, column=5).value == None:
+                    a = True
+                    RecRow = i
+        if a:
+            wsSearch.cell(row=RecRow, column=5).value = activ
+        else:
+            wsSearch.cell(row = kolichestvo, column=1).value = id
+            wsSearch.cell(row = kolichestvo, column=5).value = activ
+            wsSearch.cell(row = kolichestvo, column=2).value = identy(id)
+            wsSearch.cell(row = kolichestvo, column=3).value = getnames(id)
+            wsSearch.cell(row = kolichestvo, column=4).value = getSnames(id)
         wb.save("Data/test.xlsx")
         bot.send_message(id, 'Успешно!', reply_markup=startkbd)
 
 def todb():
     maxrow = wsSearch.max_row
-    Row =maxrow+1
+    if wsSearch.cell(row=1, column=1).value == "" or wsSearch.cell(row=1, column=1).value == None :
+        Row = maxrow
+    else:
+        Row =maxrow+1
     wsSearch.cell(row=Row, column=1).value = Man.ID
     wsSearch.cell(row=Row, column=2).value = "pupil"
     wsSearch.cell(row=Row, column=3).value = Man.name
@@ -188,17 +193,20 @@ def desub(message):
     Man.acts = GetUserActs(Man.ID)
     if activ == "Отписаться от всех активностей":
         for i in range(1, n):
-            if wsSearch.cell(i, 1).value == Man.ID:
-                wsSearch.cell(i, 5).value == ""
+            if wsSearch.cell(row=i, column=1).value == Man.ID:
+                wsSearch.cell(row=i, column=5).value = ""
+                wb.save("Data/test.xlsx")
         bot.send_message(Man.ID, "Успех!", reply_markup=startkbd)
     elif activ in Man.acts:
         for i in range(1, n):
             if wsSearch.cell(i, 1).value == Man.ID:
                 if wsSearch.cell(i, 5).value == activ:
-                    wsSearch.cell(i, 5).value == ""
+                    wsSearch.cell(i, 5).value = ""
+                    wb.save("Data/test.xlsx")
         bot.send_message(Man.ID, "Успех!", reply_markup=startkbd)
     else:
         bot.send_message(Man.ID, "Ошибка! Ты не подписан ни на одну активность!", reply_markup=startkbd)
+
 
 def input_name(message):
     Man.name = message.text
@@ -208,3 +216,4 @@ def input_name(message):
 def input_surname(message):
     Man.lastname = message.text
     todb()
+
