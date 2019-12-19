@@ -9,11 +9,9 @@ def opredelit():
     wsSearch = wbSearch.active
     now = datetime.datetime.now()
     value_1 = wsSearch.cell(row=wsSearch.max_row , column=2)
-    value_2 = wsSearch.cell(row=wsSearch.max_row, column=3)
-    value_3 = wsSearch.cell(row=wsSearch.max_row, column=4)
-    if now.day > value_1 & now.month==value_2 & now.year == value_3:
-        return ()# ретёрни что нужно
+    if now.day > value_1 
+        return True
     elif now.day < value_1:
-        return ()# здесь ретёрни тоже самое что в перовм пункте
+        return True
     else:
-        return None
+        return False
