@@ -4,7 +4,7 @@ class Person:
     ID = ""
     man = ""
     acts = []
-    VK_ID = ""
+    VkId = ""
 
 class sm:
     text = ""

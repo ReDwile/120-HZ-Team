@@ -1,10 +1,10 @@
-from openpyxl.utils import get_column_letter
-from openpyxl import Workbook, load_workbook
+from openpyxl import load_workbook
 import random
 import telebot
 from telebot import types
-from bot.classes import *
 from bot.config import *
+from bot.classes import *
+import datetime
 
 def start_kbd():
     st = types.ReplyKeyboardMarkup()
@@ -17,13 +17,41 @@ Mes = sm
 Man = Person
 startkbd = start_kbd()
 bot = telebot.TeleBot(f'{TG_TOKEN}')
-wb = load_workbook('Data/test.xlsx')
+wb = load_workbook('/Users/lalkalol/Desktop/bot/Data/test.xlsx')
 wbSearch=wb
 wsSearch=wbSearch.active
 lookfor_1="pupil"
 lookfor_2="admin"
 kolichestvo = wsSearch.max_row
 
+
+
+def codewrite(): # Генерирует новый код если дата старая
+    code = random.randint(10000, 99999)
+    codewb = load_workbook('/Users/lalkalol/Desktop/bot/Data/code.xlsx')
+    codeSearch = codewb.active
+    now = datetime.datetime.now()
+    codeSearch.cell(row = codeSearch.max_row, column=2).value = now.day
+    codeSearch.cell(row=codeSearch.max_row, column=1).value = code
+    return code
+
+
+def code(): # достает старый код если дата нормальная
+    codewb = load_workbook('/Users/lalkalol/Desktop/bot/Data/code.xlsx')
+    codeSearch = codewb.active
+    return codeSearch.cell(row=codeSearch.max_row, column=1).value
+
+def checkdate(): # Проверяет дату
+    codewb = load_workbook('/Users/lalkalol/Desktop/bot/Data/code.xlsx')
+    codeSearch = codewb.active
+    now = datetime.datetime.now()
+    value_1 = codeSearch.cell(row=codeSearch.max_row, column=2).value
+    if now.day > value_1:
+        return True
+    elif now.day < value_1:
+        return True
+    else:
+        return False
 
 def nonone(a): # Удаление повторений в масссиве
     n = []
@@ -33,8 +61,10 @@ def nonone(a): # Удаление повторений в масссиве
     return n
 
 def codegen():  #Не допилена
-    ran=random.randint(10000, 99999)
-    return '$12345'
+    if checkdate():
+        return code()
+    else:
+        return codewrite()
 
 def db():
     for sheet in wb:
@@ -121,7 +151,7 @@ def subscribe(message):
             wsSearch.cell(row = kolichestvo, column=2).value = identy(id)
             wsSearch.cell(row = kolichestvo, column=3).value = getnames(id)
             wsSearch.cell(row = kolichestvo, column=4).value = getSnames(id)
-        wb.save("Data/test.xlsx")
+        wb.save("/Users/lalkalol/Desktop/bot/Data/test.xlsx")
         bot.send_message(id, 'Успешно!', reply_markup=startkbd)
 
 def todb():
@@ -141,7 +171,7 @@ def add_act(message):
     name = message.text
     Row = wsSearch.max_row + 1
     wsSearch.cell(row = Row, column = 5).value = name
-    wb.save("Data/test.xlsx")
+    wb.save("/Users/lalkalol/Desktop/bot/Data/test.xlsx")
     bot.send_message(message.from_user.id, "Успешно!", reply_markup=startkbd)
 
 def del_act(message):
@@ -150,7 +180,7 @@ def del_act(message):
     for i in range(1, cout):
         if wsSearch.cell(row=i, column=5).value == name:
             wsSearch.cell(row = i, column=5).value = ""
-    wb.save("Data/test.xlsx")
+    wb.save("/Users/lalkalol/Desktop/bot/Data/test.xlsx")
     bot.send_message(message.from_user.id, "Успешно!", reply_markup=startkbd)
 
 def send(message):
@@ -195,14 +225,14 @@ def desub(message):
         for i in range(1, n):
             if wsSearch.cell(row=i, column=1).value == Man.ID:
                 wsSearch.cell(row=i, column=5).value = ""
-                wb.save("Data/test.xlsx")
+                wb.save("/Users/lalkalol/Desktop/bot/Data/test.xlsx")
         bot.send_message(Man.ID, "Успех!", reply_markup=startkbd)
     elif activ in Man.acts:
         for i in range(1, n):
             if wsSearch.cell(i, 1).value == Man.ID:
                 if wsSearch.cell(i, 5).value == activ:
                     wsSearch.cell(i, 5).value = ""
-                    wb.save("Data/test.xlsx")
+                    wb.save("/Users/lalkalol/Desktop/bot/Data/test.xlsx")
         bot.send_message(Man.ID, "Успех!", reply_markup=startkbd)
     else:
         bot.send_message(Man.ID, "Ошибка! Ты не подписан ни на одну активность!", reply_markup=startkbd)
@@ -217,3 +247,10 @@ def input_surname(message):
     Man.lastname = message.text
     todb()
 
+def addVk(message):
+    Man.ID =  message.from_user.id
+    Man.VkId = message.text
+    Row = wsSearch.max_row + 1
+    wsSearch.cell(row=Row, column=5).value = Man.VkId
+    wb.save("/Users/lalkalol/Desktop/bot/Data/test.xlsx")
+    bot.send_message(message.from_user.id, "Успешно!", reply_markup=startkbd)

@@ -62,6 +62,9 @@ def pupil_f(message, Man):
             bot.send_message(Man.ID, text="Выбери активности от которых хочешь отписаться:", reply_markup=desub_kbd)
             bot.register_next_step_handler(message, desub)
 
+        elif message.text == "Привязать/Изменить ВК":
+            bot.send_message(Man.ID, text="Введи ID который двл тебе бот ВК:")
+            bot.register_next_step_handler(message, addVk)
 
 def admin_f(message, Man):
     if Man.man == "admin":
@@ -86,6 +89,3 @@ def admin_f(message, Man):
 
 
 bot.polling(none_stop=True)
-
-
-

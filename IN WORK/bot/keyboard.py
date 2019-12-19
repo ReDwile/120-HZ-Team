@@ -46,9 +46,11 @@ def p_k(): #pupil
     row1 = types.KeyboardButton("Покажи мои активности")
     row2 = types.KeyboardButton("Подписаться на активность")
     row3 = types.KeyboardButton("Отписаться от активности")
+    row4 = types.KeyboardButton("Привязать/Изменить ВК")
     pupil_kbd.row(row1)
     pupil_kbd.row(row2)
     pupil_kbd.row(row3)
+    pupil_kbd.row(row4)
     return pupil_kbd
 
 def a_k(): #admin
@@ -68,4 +70,3 @@ def n_k(): #noname
     row3 = types.KeyboardButton("Регистрация")
     nn_kbd.row(row3)
     return nn_kbd
-
