@@ -3,9 +3,10 @@ from random import randint
 import telebot
 from telebot import types
 from bot.config import *
-from bot.classes import *
 import datetime
 import time
+import bs4
+import requests
 
 
 def start_kbd():
@@ -17,8 +18,7 @@ def start_kbd():
 
 bot = telebot.TeleBot(f'{TG_TOKEN}')
 
-
-class MansDataBase(object):  # Датабаза людей
+class MansDataBase(object):
     @staticmethod
     def nonone(a):  # Удаление повторений в масссиве
         n = []
@@ -50,6 +50,7 @@ class MansDataBase(object):  # Датабаза людей
         self.acts = []
         self.VkId = ""
 
+class MansDataBaseTG(MansDataBase):  # Датабаза людей
 
     def delActs(self, name):  # Функция удаляет активности
         for i in range(1, self.maxrow):
@@ -65,7 +66,7 @@ class MansDataBase(object):  # Датабаза людей
         self.wb.save(self.path)
         bot.send_message(self.ID, "Успешно!", reply_markup=startkbd)
 
-    def identy(self,ID):  # Определяет статус человека, который написал сообщение
+    def identy(self, ID):  # Определяет статус человека, который написал сообщение
         status = "noname"
         for i in range(1, self.maxrow):
             value = self.wsSearch.cell(row=i, column=1).value
@@ -111,6 +112,17 @@ class MansDataBase(object):  # Датабаза людей
             return lastname_status
         return z
 
+    def getVkId(self,ID):
+        z = ""
+        VkId_status = None
+        for i in range(1, self.maxrow):
+            value = self.wsSearch.cell(row=i, column=1).value
+            if value == ID:
+                VkId_status = self.wsSearch.cell(row=i, column=46).value
+        if VkId_status != None:
+            return VkId_status
+        return z
+
     def subscribe(self, message):  # Подписка на активность
         id = message.from_user.id
         useracts = self.GetUserActs(id)
@@ -121,7 +133,7 @@ class MansDataBase(object):  # Датабаза людей
         else:
             for i in range(1, self.maxrow):
                 if self.wsSearch.cell(row=i, column=1).value == id:
-                    if self.wsSearch.cell(row=i, column=5).value == "" or self.wsSearch.cell(row=self.maxrow, column=5).value == None:
+                    if self.wsSearch.cell(row=i, column=5).value == "" or self.wsSearch.cell(row=i, column=5).value == None:
                         a = True
                         RecRow = i
             if a:
@@ -132,11 +144,12 @@ class MansDataBase(object):  # Датабаза людей
                 self.wsSearch.cell(row=self.maxrow, column=2).value = self.identy(id)
                 self.wsSearch.cell(row=self.maxrow, column=3).value = self.getnames(id)
                 self.wsSearch.cell(row=self.maxrow, column=4).value = self.getSnames(id)
+                self.wsSearch.cell(row=self.maxrow, column=6).value = self.getVkId(id)
             self.wb.save(self.path)
             bot.send_message(id, 'Успешно!', reply_markup=startkbd)
 
     def desub(self, message):  # Отписаться от активности
-        Man = MansDataBase()
+        Man = MansDataBaseTG()
 
         Man.ID = message.from_user.id
         activ = message.text
@@ -176,6 +189,78 @@ class MansDataBase(object):  # Датабаза людей
         self.wb.save(self.path)
         bot.send_message(self.ID, "Успешно!", reply_markup=startkbd)
 
+class MansDataBaseVK(MansDataBase):
+    def todbVK(self, message):
+        self.VkId = message.user_id
+        self.name = self.get_VKuser_name(self.VkId)
+        self.lastname = self.get_VKuser_lastname(self.VkId)
+
+        self.wsSearch.cell(row=self.maxrow, column=6).value = self.VkId
+        self.wsSearch.cell(row=self.maxrow, column=2).value = "pupil"
+        self.wsSearch.cell(row=self.maxrow, column=3).value = self.name
+        self.wsSearch.cell(row=self.maxrow, column=4).value = self.lastname
+
+
+    def get_VKuser_lastname(self, user_id):
+        request = requests.get("https://vk.com/" + str(user_id))
+        bs = bs4.BeautifulSoup(request.text, "html.parser")
+
+        user_name = self._clean_all_tag_from_str(bs.findAll("title")[0])
+
+        return user_name.split()[1]
+
+    def identyVK(self, ID):
+        status = "noname"
+        for i in range(1, self.maxrow):
+            value = self.wsSearch.cell(row=i, column=6).value
+            if value == ID:
+                return self.wsSearch.cell(row=i, column=2).value
+        return status
+
+    def get_VKuser_name(self, user_id):
+        request = requests.get("https://vk.com/" + str(user_id))
+        bs = bs4.BeautifulSoup(request.text, "html.parser")
+
+        user_name = self._clean_all_tag_from_str(bs.findAll("title")[0])
+        return user_name.split()[0]
+
+    def GetUserActsVK(self, ID):
+        activities = []
+        zero = []
+        for i in range(6, self.maxrow):
+            value = self.wsSearch.cell(row=i, column=6).value
+            if value == ID:
+                activities.append(self.wsSearch.cell(row=i, column=5).value)
+        self.nonone(activities)
+        for i in range(0, len(activities)):
+            if activities[i] == None:
+                activities[i] = ""
+        if zero == activities:
+            return None
+        else:
+            return self.nonone(activities)
+
+    @staticmethod
+    def _clean_all_tag_from_str(string_line):
+        """
+        Очистка строки stringLine от тэгов и их содержимых
+        :param string_line: Очищаемая строка
+        :return: очищенная строка
+        """
+        result = ""
+        not_skip = True
+        for i in list(string_line):
+            if not_skip:
+                if i == "<":
+                    not_skip = False
+                else:
+                    result += i
+            else:
+                if i == ">":
+                    not_skip = True
+
+        return result
+
 
 class ActsDataBase:  # Датабаза активностей
     @staticmethod
@@ -203,7 +288,7 @@ class ActsDataBase:  # Датабаза активностей
 
         self.maxrow = self.maxrowSearch(self.wsSearch)  # Узнаем максимальный ряд
 
-        self.Mans = MansDataBase()
+        self.Mans = MansDataBaseTG()
 
     def getallacts(self):  # получаем все активности
         activities = []
@@ -296,7 +381,7 @@ class CodeCheck:
         self.codewb = load_workbook(self.path)
         self.codeSearch = self.codewb.active
         self.maxrow = self.maxrowSearch(self.codeSearch)
-        self.MainDB = MansDataBase()
+        self.MainDB = MansDataBaseTG()
 
     def code(self):  # достает код
         value = self.codeSearch.cell(row=self.codeSearch.max_row, column=1).value
@@ -304,7 +389,7 @@ class CodeCheck:
 
     def checkcode(self, message):
         inputCode = message.text
-        Man = MansDataBase()
+        Man = MansDataBaseTG()
 
         Man.ID = message.from_user.id
         if True:
@@ -336,7 +421,7 @@ class CodeGen:
     def checkdate(self):
         while True:
             day = self.now.day
-            if self.codeSearch.cell(row=self.codeSearch.max_row, column=2) != day:
+            if self.codeSearch.cell(row=self.codeSearch.max_row, column=2) != str(day):
                 self.codegen()
             time.sleep(1800)
 
