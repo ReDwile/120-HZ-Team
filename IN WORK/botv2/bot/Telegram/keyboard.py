@@ -1,81 +1,116 @@
 from telebot import types
-from bot.function import *
+from bot.modules.getText import *
+
+AdminTexts = getText("admin")
+PupilTexts = getText("pupil")
+NonameTexts = getText("noname")
+OthersTexts = getText(None)
+def backkbd():
+    backkbd = types.ReplyKeyboardMarkup()
+    backkbd.add("Назад")
+    return backkbd
+
+class TGkeyboards(object):
+
+    def __init__(self):
+
+        from bot.modules.function import ActsDataBase
+        self.Acts = ActsDataBase()
+        from bot.modules.function import MansDataBaseTG
+        self.Man = MansDataBaseTG()
 
 
-def desub_k(ID):
-    Man = MansDataBaseTG()
+class AdminTGkeyboards(TGkeyboards):
 
-    activities_kbd = types.ReplyKeyboardMarkup()
-    acts = Man.GetUserActs(ID)
-    k = len(acts)
-    row = types.KeyboardButton("Отписаться от всех активностей")
-    activities_kbd.add(row)
-    for i in range(0, k):
-        row = types.KeyboardButton(f'{acts[i]}')
-        activities_kbd.add(row)
-    return activities_kbd
-
-def sub():
-    Acts = ActsDataBase()
-
-    activities_kbd = types.ReplyKeyboardMarkup()
-    acts = Acts.getallacts()
-    k = len(acts)
-    for i in range(0, k):
-        row = types.KeyboardButton(f'{acts[i]}')
-        activities_kbd.add(row)
-    return activities_kbd
-
-def send_message_kbd():
-    Acts = ActsDataBase()
-
-    acts = Acts.getallacts()
-    k = len(acts)
-    send_kbd = types.ReplyKeyboardMarkup()
-    row = types.KeyboardButton("Всем")
-    send_kbd.add(row)
-    for i in range(0, k):
-        row = types.KeyboardButton(f'{acts[i]}')
+    def send_message_kbd(self):
+        acts = self.Acts.getallacts()
+        k = len(acts)
+        send_kbd = types.ReplyKeyboardMarkup()
+        rowb = types.KeyboardButton("Назад")
+        send_kbd.add(rowb)
+        row = types.KeyboardButton("Всем")
         send_kbd.add(row)
-    return send_kbd
+        for i in range(0, k):
+            row = types.KeyboardButton(f'{acts[i]}')
+            send_kbd.add(row)
+        return send_kbd
 
-def del_act_kb(): # Высвечивает все активности для удаления
-    Acts = ActsDataBase()
+    def del_act_kb(self):  # Высвечивает все активности для удаления
+        acts = self.Acts.getallacts()
+        k = len(acts)
+        del_kbd = types.ReplyKeyboardMarkup()
+        rowb = types.KeyboardButton("Назад")
+        del_kbd.add(rowb)
+        for i in range(0, k):
+            row = types.KeyboardButton(f'{acts[i]}')
+            del_kbd.add(row)
+        return del_kbd
 
-    acts = Acts.getallacts()
-    k = len(acts)
-    del_kbd = types.ReplyKeyboardMarkup()
-    for i in range(0, k):
-        row = types.KeyboardButton(f'{acts[i]}')
-        del_kbd.add(row)
-    return del_kbd
+    @staticmethod
+    def admin_k():  # admin
+        admin_kbd = types.ReplyKeyboardMarkup()
+        rowa1 = types.KeyboardButton(AdminTexts.gettext("Добавление активности"))
+        rowa2 = types.KeyboardButton(AdminTexts.gettext("Удаление активности"))
+        rowa3 = types.KeyboardButton(AdminTexts.gettext("Просмотр активностей"))
+        rowa4 = types.KeyboardButton(AdminTexts.gettext("Отправка сообщения"))
+        admin_kbd.row(rowa1)
+        admin_kbd.row(rowa2)
+        admin_kbd.row(rowa3)
+        admin_kbd.row(rowa4)
+        return admin_kbd
 
-def p_k(): #pupil
-    pupil_kbd = types.ReplyKeyboardMarkup()
-    row1 = types.KeyboardButton("Покажи мои активности")
-    row2 = types.KeyboardButton("Подписаться на активность")
-    row3 = types.KeyboardButton("Отписаться от активности")
-    row4 = types.KeyboardButton("Привязать/Изменить ВК")
-    pupil_kbd.row(row1)
-    pupil_kbd.row(row2)
-    pupil_kbd.row(row3)
-    pupil_kbd.row(row4)
-    return pupil_kbd
+class PupilTGkeyboards(TGkeyboards):
 
-def a_k(): #admin
-    admin_kbd = types.ReplyKeyboardMarkup()
-    rowa1 = types.KeyboardButton("Добавить активность")
-    rowa2 = types.KeyboardButton("Удалить активность")
-    rowa3 = types.KeyboardButton("Посмотреть активности")
-    rowa4 = types.KeyboardButton("Отправить сообщение")
-    admin_kbd.row(rowa1)
-    admin_kbd.row(rowa2)
-    admin_kbd.row(rowa3)
-    admin_kbd.row(rowa4)
-    return admin_kbd
+    def desub_k(self, ID):
+        activities_kbd = types.ReplyKeyboardMarkup()
+        acts = self.Man.GetUserActs(ID)
+        k = len(acts)
+        rowb = types.KeyboardButton("Назад")
+        activities_kbd.add(rowb)
+        row = types.KeyboardButton("Отписаться от всех активностей")
+        activities_kbd.add(row)
+        for i in range(0, k):
+            row = types.KeyboardButton(f'{acts[i]}')
+            activities_kbd.add(row)
+        return activities_kbd
 
-def n_k(): #noname
-    nn_kbd = types.ReplyKeyboardMarkup()
-    row3 = types.KeyboardButton("Регистрация")
-    nn_kbd.row(row3)
-    return nn_kbd
+    def sub(self):
+
+        activities_kbd = types.ReplyKeyboardMarkup()
+        acts = self.Acts.getallacts()
+        k = len(acts)
+        rowb = types.KeyboardButton("Назад")
+        activities_kbd.add(rowb)
+        for i in range(0, k):
+            row = types.KeyboardButton(f'{acts[i]}')
+            activities_kbd.add(row)
+        return activities_kbd
+    @staticmethod
+    def p_k():  # pupil
+        pupil_kbd = types.ReplyKeyboardMarkup()
+        row1 = types.KeyboardButton(PupilTexts.gettext("Показать активности"))
+        row2 = types.KeyboardButton(PupilTexts.gettext("Подписка на активность"))
+        row3 = types.KeyboardButton(PupilTexts.gettext("Отписка от активности"))
+        row4 = types.KeyboardButton(PupilTexts.gettext("Изменение данных"))
+        pupil_kbd.row(row1)
+        pupil_kbd.row(row2)
+        pupil_kbd.row(row3)
+        pupil_kbd.row(row4)
+        return pupil_kbd
+
+    @staticmethod
+    def changekbd():
+        changekbd = types.ReplyKeyboardMarkup()
+        changekbd.row(types.KeyboardButton("Имя"))
+        changekbd.row(types.KeyboardButton("Фамилия"))
+        changekbd.row(types.KeyboardButton("ВК"))
+        return changekbd
+
+
+class NonameTGKeyboards(TGkeyboards):
+    @staticmethod
+    def n_k(): #noname
+        nn_kbd = types.ReplyKeyboardMarkup()
+        row3 = types.KeyboardButton("Регистрация")
+        nn_kbd.row(row3)
+        return nn_kbd

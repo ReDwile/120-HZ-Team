@@ -1,11 +1,13 @@
-from bot.Telegram.keyboard import *
+from bot.Telegram.keyboard import backkbd
+from bot.modules.function import *
 
-pupil_kbd = p_k()
-admin_kbd = a_k()
-nn_kbd = n_k()
+
 
 @bot.message_handler(commands=['start'])  # Тут все ок и работает
 def start(message):
+    pupilkbd = PupilTGkeyboards()
+    adminkbd = AdminTGkeyboards()
+    nonamekbd = NonameTGKeyboards()
 
     Man = MansDataBaseTG()
 
@@ -13,11 +15,11 @@ def start(message):
     Man.man = Man.identy(Man.ID)
 
     if Man.man == "pupil":
-        bot.send_message(Man.ID, text="Вот функции, доступные тебе:", reply_markup=pupil_kbd)
+        bot.send_message(Man.ID, text="Вот функции, доступные тебе:", reply_markup=pupilkbd.p_k())
     elif Man.man == "noname":
-        bot.send_message(Man.ID, text="Вот функции, доступные тебе:", reply_markup=nn_kbd)
+        bot.send_message(Man.ID, text="Вот функции, доступные тебе:", reply_markup=nonamekbd.n_k())
     elif Man.man == "admin":
-        bot.send_message(Man.ID, text="Вот функции, доступные тебе:", reply_markup=admin_kbd)
+        bot.send_message(Man.ID, text="Вот функции, доступные тебе:", reply_markup=adminkbd.admin_k())
 
 @bot.message_handler(content_types=['text'])
 def text(message):
@@ -32,6 +34,8 @@ def text(message):
         Man.acts = Man.GetUserActs(Man.ID)
         Man.name = Man.getnames(Man.ID)
         Man.lastname = Man.getSnames(Man.ID)
+        Man.VkId = Man.getVkId(Man.ID)
+
         if Man.man == "admin":
             admin_f(message, Man)
         elif Man.man == "pupil":
@@ -39,60 +43,80 @@ def text(message):
 
 
 def nn_f(message, Man):
+    nonamekbd = NonameTGKeyboards()
     Code = CodeCheck()
 
-    if message.text == "Регистрация":  #Регистрация ноунэйма(работает)
-            bot.send_message(Man.ID, text="Введи код приглашения")
+    if message.text == NonameTexts.gettext("Регистрация"):  #Регистрация ноунэйма(работает)
+            bot.send_message(Man.ID, text=NonameTexts.gettext("Ввод кода"))
             bot.register_next_step_handler(message, Code.checkcode)
+    else:
+        bot.send_message(Man.ID, text=Unknown_command, reply_markup=nonamekbd.n_k())
 
 
 def pupil_f(message, Man):
-    activities_kbd = sub()
-    desub_kbd = desub_k(Man.ID)
-    if Man.man == "pupil":
-        if message.text == "Покажи мои активности":  # Вроде работает
-            try:
-                bot.send_message(Man.ID,  '\n'.join(Man.GetUserActs(Man.ID)), reply_markup=startkbd )
-            except:
-                bot.send_message(Man.ID, "У тебя нет активностей!")
 
-        elif message.text == "Подписаться на активность": # Работает
-            bot.send_message(Man.ID, text="Держи!\n\n", reply_markup=activities_kbd)
+    PupilTexts = getText("pupil")
+
+    pupilkbd = PupilTGkeyboards()
+
+    activities_kbd = pupilkbd.sub()
+    desub_kbd = pupilkbd.desub_k(Man.ID)
+
+    if Man.man == "pupil":
+        if message.text == PupilTexts.gettext("Показать активности"):  # Вроде работает
+            try:
+                bot.send_message(Man.ID,  '\n'.join(Man.GetUserActs(Man.ID)), reply_markup=pupilkbd.p_k())
+            except:
+                bot.send_message(Man.ID, PupilTexts.gettext("Активностей нет"))
+
+        elif message.text == PupilTexts.gettext("Подписка на активность"): # Работает
+            bot.send_message(Man.ID, text=f'{PupilTexts.gettext("Ответ с выводом(подписка)")}', reply_markup=activities_kbd)
             bot.register_next_step_handler(message, Man.subscribe)
 
-        elif message.text == "Отписаться от активности":
-            bot.send_message(Man.ID, text="Выбери активности от которых хочешь отписаться:", reply_markup=desub_kbd)
+        elif message.text == PupilTexts.gettext("Отписка от активности"):
+            bot.send_message(Man.ID, text=f'{PupilTexts.gettext("Ответ с выводом(отписка)")}', reply_markup=desub_kbd)
             bot.register_next_step_handler(message, Man.desub)
 
-        elif message.text == "Привязать/Изменить ВК":
-            bot.send_message(Man.ID, text="Введи ID который давал тебе бот ВК:")
-            bot.register_next_step_handler(message, Man.addVk)
+        elif message.text == PupilTexts.gettext("Изменение данных"):
+            bot.send_message(Man.ID, text=f'Имя: {Man.name}\nФамилия: {Man.lastname}\nВК: {Man.VkId}', reply_markup=pupilkbd.changekbd())
+            bot.register_next_step_handler(message, Man.changeData)
+        else:
+            bot.send_message(Man.ID, text=Unknown_command, reply_markup=pupilkbd.p_k())
 
 def admin_f(message, Man):
+    AdminTexts = getText("admin")
+
     Acts = ActsDataBase()
+
+    adminkbd = AdminTGkeyboards()
+
     sendmsg = SendMessage()
-    del_act_kbd = del_act_kb()
-    sendkbd = send_message_kbd()
+    del_act_kbd = adminkbd.del_act_kb()
+    sendkbd = adminkbd.send_message_kbd()
+
     if Man.man == "admin":
-        if message.text == "Добавить активность":  # Работает
-            bot.send_message(Man.ID, text="Введите название:")
+        if message.text == AdminTexts.gettext("Добавление активности"):  # Работает
+            bot.send_message(Man.ID, text="Введите название:", reply_markup=backkbd())
             bot.register_next_step_handler(message, Acts.add_act)
 
-        elif message.text == "Удалить активность":   # Работает
-            bot.send_message(Man.ID, "Выберите активность, которую хотите удалить:", reply_markup=del_act_kbd)
+        elif message.text == AdminTexts.gettext("Удаление активности"):   # Работает
+            bot.send_message(Man.ID, "Выберите активность, которую хотите удалить:", reply_markup=del_act_kbd())
             bot.register_next_step_handler(message, Acts.del_act)
 
-        elif message.text == "Посмотреть активности":  # С багом, но работает
+        elif message.text == AdminTexts.gettext("Просмотр активностей"):  # С багом, но работает
             try:
-                bot.send_message(Man.ID, '\n'.join(Acts.getallacts()), reply_markup=startkbd)
-            except:
+                bot.send_message(Man.ID, '\n'.join(Acts.getallacts()), reply_markup=adminkbd.admin_k())
+            except TypeError:
                 bot.send_message(Man.ID, "Активностей нет!")
 
-        elif message.text == "Отправить сообщение":  #Работает
+        elif message.text == AdminTexts.gettext("Отправка сообщения"):  #Работает
             bot.send_message(Man.ID, "Какой группе вы хотите отправить сообщение?:", reply_markup=sendkbd)
             bot.register_next_step_handler(message, sendmsg.send)
+
+        else:
+            bot.send_message(Man.ID, text=Unknown_command, reply_markup=adminkbd.admin_k())
 
 
 bot.polling(none_stop=True)
 
-CodeGen().checkdate()
+#CodeGen().checkdate()
