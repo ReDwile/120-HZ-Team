@@ -4,7 +4,8 @@ from bot.modules.getText import *
 AdminTexts = getText("admin")
 PupilTexts = getText("pupil")
 NonameTexts = getText("noname")
-OthersTexts = getText(None)
+OthersTexts = getText("other")
+
 def backkbd():
     backkbd = types.ReplyKeyboardMarkup()
     backkbd.add("Назад")
@@ -53,10 +54,12 @@ class AdminTGkeyboards(TGkeyboards):
         rowa2 = types.KeyboardButton(AdminTexts.gettext("Удаление активности"))
         rowa3 = types.KeyboardButton(AdminTexts.gettext("Просмотр активностей"))
         rowa4 = types.KeyboardButton(AdminTexts.gettext("Отправка сообщения"))
+        rowa5 = types.KeyboardButton(AdminTexts.gettext("Получить код"))
         admin_kbd.row(rowa1)
         admin_kbd.row(rowa2)
         admin_kbd.row(rowa3)
         admin_kbd.row(rowa4)
+        admin_kbd.row(rowa5)
         return admin_kbd
 
 class PupilTGkeyboards(TGkeyboards):
