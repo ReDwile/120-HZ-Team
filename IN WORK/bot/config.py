@@ -1,9 +1,13 @@
-tokenpath = "/Users/lalkalol/Desktop/bot/Data/TG_TOKEN.txt"
+import configparser
+
+tokenpath = "./Data/TG_TOKENS.ini"
 
 def getToken(path):
-    with open(path, "r") as file:
-        res = str(file.read())
-    return res
+
+    config = configparser.RawConfigParser()
+    config.read(tokenpath)
+
+    return config.get('Config', 'Config.test_token')
 
 TG_TOKEN = getToken(tokenpath)
 
