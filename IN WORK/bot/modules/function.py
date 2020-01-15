@@ -5,10 +5,9 @@ from telebot import types
 from bot.config import *
 import datetime
 import time
-import bs4
-import requests
 from bot.Telegram.keyboard import PupilTGkeyboards, AdminTGkeyboards, NonameTGKeyboards, backkbd
 from bot.modules.getText import getText
+
 
 AdminTexts = getText("admin")
 PupilTexts = getText("pupil")
@@ -26,9 +25,9 @@ def start_kbd():
 bot = telebot.TeleBot(f'{TG_TOKEN}')
 
 
-adminkbd = AdminTGkeyboards.admin_k
-nonamekbd = NonameTGKeyboards.n_k
-pupilkbd = PupilTGkeyboards.p_k
+adminkbd = AdminTGkeyboards.admin_k()
+nonamekbd = NonameTGKeyboards.n_k()
+pupilkbd = PupilTGkeyboards.p_k()
 
 
 class MansDataBase(object):
@@ -51,7 +50,7 @@ class MansDataBase(object):
             return int(ws.max_row + 1)
 
     def __init__(self):
-        self.path = '/Users/lalkalol/Desktop/bot/Data/test.xlsx'  # Путь к файлу
+        self.path = './Data/test.xlsx'  # Путь к файлу
         self.wb = load_workbook(self.path)  # Создаем книгу
         self.wsSearch = self.wb.active  # Рабочий лист
         self.maxrow = self.maxrowSearch(self.wsSearch)  # Узнаем максимальный ряд
@@ -79,7 +78,7 @@ class MansDataBaseTG(MansDataBase):  # Датабаза людей
         self.wsSearch.cell(row=self.maxrow, column=3).value = self.name
         self.wsSearch.cell(row=self.maxrow, column=4).value = self.lastname
         self.wb.save(self.path)
-        bot.send_message(self.ID, "Успешно!", reply_markup=pupilkbd())
+        bot.send_message(self.ID, "Успешно!", reply_markup=pupilkbd )
 
     def identy(self, ID):  # Определяет статус человека, который написал сообщение
         status = "noname"
@@ -101,12 +100,11 @@ class MansDataBaseTG(MansDataBase):  # Датабаза людей
             if activities[i] == None:
                 activities[i] = ""
         if zero == activities:
-            return None
+            return []
         else:
             return self.nonone(activities)
 
     def getnames(self, ID):  # Возвращает имя пользователя
-        z = ""
         name_status = None
         for i in range(1, self.maxrow):
             value = self.wsSearch.cell(row=i, column=1).value
@@ -114,7 +112,7 @@ class MansDataBaseTG(MansDataBase):  # Датабаза людей
                 name_status = self.wsSearch.cell(row=i, column=3).value
         if name_status != None:
             return name_status
-        return z
+        return ""
 
     def getSnames(self, ID):  # Возвращает фамилию пользователя
         z = ""
@@ -138,18 +136,28 @@ class MansDataBaseTG(MansDataBase):  # Датабаза людей
         else:
             return "Не указано"
 
+
     def subscribe(self, message):  # Подписка на активность
         if message.text == "Назад":
-            bot.send_message(message.from_user.id, text=OthersTexts.gettext('back'),reply_markup=pupilkbd())
+            bot.send_message(message.from_user.id, text=OthersTexts.gettext('back'),reply_markup=pupilkbd)
         else:
             global RecRow
             id = message.from_user.id
             useracts = self.GetUserActs(id)
+            c = True
+            b = True
+            if useracts == None:
+                b = False
             activ = message.text
             a = False
-            if activ in useracts:
-                bot.send_message(id, 'Ошибка! Ты уже зарегистрирован на эту активность', reply_markup=pupilkbd())
-            else:
+            if b:
+                if activ in useracts:
+                    bot.send_message(id, 'Ошибка! Ты уже зарегистрирован на эту активность', reply_markup=pupilkbd)
+                    c = False
+                if not activ in ActsDataBase().getallacts():
+                    c = False
+                    bot.send_message(id, 'Ошибка! Такой активности не существует', reply_markup=pupilkbd)
+            if c:
                 for i in range(1, self.maxrow):
                     if self.wsSearch.cell(row=i, column=1).value == id:
                         if self.wsSearch.cell(row=i, column=5).value == "" or self.wsSearch.cell(row=i, column=5).value == None:
@@ -165,11 +173,11 @@ class MansDataBaseTG(MansDataBase):  # Датабаза людей
                     self.wsSearch.cell(row=self.maxrow, column=4).value = self.getSnames(id)
                     self.wsSearch.cell(row=self.maxrow, column=6).value = self.getVkId(id)
                 self.wb.save(self.path)
-                bot.send_message(id, 'Успешно!', reply_markup=pupilkbd())
+                bot.send_message(id, 'Успешно!', reply_markup=pupilkbd)
 
     def desub(self, message):  # Отписаться от активности
         if message.text == "Назад":
-            bot.send_message(message.from_user.id, text=OthersTexts.gettext('back'),reply_markup=pupilkbd())
+            bot.send_message(message.from_user.id, text=OthersTexts.gettext('back'),reply_markup=pupilkbd)
         else:
             Man = MansDataBaseTG()
 
@@ -181,16 +189,16 @@ class MansDataBaseTG(MansDataBase):  # Датабаза людей
                     if self.wsSearch.cell(row=i, column=1).value == Man.ID:
                         self.wsSearch.cell(row=i, column=5).value = ""
                         self.wb.save(self.path)
-                bot.send_message(Man.ID, "Успех!", reply_markup=pupilkbd())
+                bot.send_message(Man.ID, "Успех!", reply_markup=pupilkbd)
             elif activ in Man.acts:
                 for i in range(1, self.maxrow):
                     if self.wsSearch.cell(i, 1).value == Man.ID:
                         if self.wsSearch.cell(i, 5).value == activ:
                             self.wsSearch.cell(i, 5).value = ""
                             self.wb.save(self.path)
-                bot.send_message(Man.ID, "Успех!", reply_markup=pupilkbd())
+                bot.send_message(Man.ID, "Успех!", reply_markup=pupilkbd)
             else:
-                bot.send_message(Man.ID, "Ошибка! Ты не подписан ни на одну активность!", reply_markup=pupilkbd())
+                bot.send_message(Man.ID, "Ошибка! Ты не подписан на эту активность!", reply_markup=pupilkbd)
 
     def input_name(self, message):  # Ввод имени при регистрации
         self.ID = message.from_user.id
@@ -212,11 +220,11 @@ class MansDataBaseTG(MansDataBase):  # Датабаза людей
                 if self.ID == self.wsSearch.cell(row=i, column=1).value:
                     self.wsSearch.cell(row=i, column=6).value = self.VkId
             self.wb.save(self.path)
-            bot.send_message(self.ID, "Успешно!", reply_markup=pupilkbd())
+            bot.send_message(self.ID, "Успешно!", reply_markup=pupilkbd)
 
     def changeData(self, message):
         if message.text == "Назад":
-            bot.send_message(message.from_user.id, text=OthersTexts.gettext('back'),reply_markup=pupilkbd())
+            bot.send_message(message.from_user.id, text=OthersTexts.gettext('back'),reply_markup=pupilkbd)
         elif message.text == "Имя":
             bot.send_message(message.from_user.id, text="Введи свое имя:", reply_markup=backkbd())
             bot.register_next_step_handler(message, self.changename)
@@ -229,7 +237,7 @@ class MansDataBaseTG(MansDataBase):  # Датабаза людей
 
     def changename(self, message):
         if message.text == "Назад":
-            bot.send_message(message.from_user.id, text=OthersTexts.gettext('back'),reply_markup=pupilkbd())
+            bot.send_message(message.from_user.id, text=OthersTexts.gettext('back'),reply_markup=pupilkbd)
         else:
             self.name = message.text
             for i in range(1, self.maxrow):
@@ -240,100 +248,25 @@ class MansDataBaseTG(MansDataBase):  # Датабаза людей
 
     def changeSname(self, message):
         if message.text == "Назад":
-            bot.send_message(message.from_user.id, text=OthersTexts.gettext('back'),reply_markup=pupilkbd())
+            bot.send_message(message.from_user.id, text=OthersTexts.gettext('back'),reply_markup=pupilkbd)
         else:
             self.lastname = message.text
             for i in range(1, self.maxrow):
                 if self.wsSearch.cell(row=i, column=1).value == self.ID:
                     self.wsSearch.cell(row=i, column=4).value = self.lastname
             self.wb.save(self.path)
-            bot.send_message(self.ID, "Успешно!", reply_markup=pupilkbd())
+            bot.send_message(self.ID, "Успешно!", reply_markup=pupilkbd)
 
     def changeVK(self, message):
         if message.text == "Назад":
-            bot.send_message(message.from_user.id, text=OthersTexts.gettext('back'),reply_markup=pupilkbd())
+            bot.send_message(message.from_user.id, text=OthersTexts.gettext('back'),reply_markup=pupilkbd)
         else:
             self.VkId = message.text
             for i in range(1, self.maxrow):
                 if self.wsSearch.cell(row=i, column=1).value == self.ID:
                     self.wsSearch.cell(row=i, column=6).value = self.VkId
             self.wb.save(self.path)
-            bot.send_message(self.ID, "Успешно!", reply_markup=pupilkbd())
-
-class MansDataBaseVK(MansDataBase):
-    def todbVK(self, message):
-        self.VkId = message.user_id
-        self.name = self.get_VKuser_name(self.VkId)
-        self.lastname = self.get_VKuser_lastname(self.VkId)
-
-        self.wsSearch.cell(row=self.maxrow, column=6).value = self.VkId
-        self.wsSearch.cell(row=self.maxrow, column=2).value = "pupil"
-        self.wsSearch.cell(row=self.maxrow, column=3).value = self.name
-        self.wsSearch.cell(row=self.maxrow, column=4).value = self.lastname
-
-
-    def get_VKuser_lastname(self, user_id):
-        request = requests.get("https://vk.com/" + str(user_id))
-        bs = bs4.BeautifulSoup(request.text, "html.parser")
-
-        user_name = self._clean_all_tag_from_str(bs.findAll("title")[0])
-
-        return user_name.split()[1]
-
-    def identyVK(self, ID):
-        status = "noname"
-        for i in range(1, self.maxrow):
-            value = self.wsSearch.cell(row=i, column=6).value
-            if value == ID:
-                return self.wsSearch.cell(row=i, column=2).value
-        return status
-
-    def get_VKuser_name(self, user_id):
-        request = requests.get("https://vk.com/" + str(user_id))
-        bs = bs4.BeautifulSoup(request.text, "html.parser")
-
-        user_name = self._clean_all_tag_from_str(bs.findAll("title")[0])
-        return user_name.split()[0]
-
-    def GetUserActsVK(self, ID):
-        activities = []
-        zero = []
-        for i in range(6, self.maxrow):
-            value = self.wsSearch.cell(row=i, column=6).value
-            if value == ID:
-                activities.append(self.wsSearch.cell(row=i, column=5).value)
-        self.nonone(activities)
-        for i in range(0, len(activities)):
-            if activities[i] == None:
-                activities[i] = ""
-        if zero == activities:
-            return None
-        else:
-            return self.nonone(activities)
-
-    @staticmethod
-    def _clean_all_tag_from_str(string_line):
-        """
-        Очистка строки stringLine от тэгов и их содержимых
-        :param string_line: Очищаемая строка
-        :return: очищенная строка
-        """
-        result = ""
-        not_skip = True
-        for i in list(string_line):
-            if not_skip:
-                if i == "<":
-                    not_skip = False
-                else:
-                    result += i
-            else:
-                if i == ">":
-                    not_skip = True
-
-        return result
-
-
-
+            bot.send_message(self.ID, "Успешно!", reply_markup=pupilkbd)
 
 class ActsDataBase:  # Датабаза активностей
     @staticmethod
@@ -355,7 +288,7 @@ class ActsDataBase:  # Датабаза активностей
             return ws.max_row + 1
 
     def __init__(self):
-        self.path = '/Users/lalkalol/Desktop/bot/Data/acts.xlsx'  # Путь к файлу
+        self.path = './Data/acts.xlsx'  # Путь к файлу
         self.wb = load_workbook(self.path)  # Создаем книгу
         self.wsSearch = self.wb.active  # Рабочий лист
 
@@ -374,23 +307,23 @@ class ActsDataBase:  # Датабаза активностей
 
     def add_act(self, message):  # Добавляем активность
         if message.text == "Назад":
-            bot.send_message(message.from_user.id, text=OthersTexts.gettext('back'),reply_markup=adminkbd())
+            bot.send_message(message.from_user.id, text=OthersTexts.gettext('back'),reply_markup=adminkbd)
         else:
             name = message.text
             self.wsSearch.cell(row=self.maxrow, column=1).value = name
             self.wb.save(self.path)
-            bot.send_message(message.from_user.id, "Успешно!", reply_markup=adminkbd())
+            bot.send_message(message.from_user.id, "Успешно!", reply_markup=adminkbd)
 
     def del_act(self, message):# Удаление активности
         if message.text == "Назад":
-            bot.send_message(message.from_user.id, text=OthersTexts.gettext('back'),reply_markup=adminkbd())
+            bot.send_message(message.from_user.id, text=OthersTexts.gettext('back'),reply_markup=adminkbd)
         else:
             name = message.text
             for i in range(1, self.maxrow):
                 if self.wsSearch.cell(row=i, column=1).value == name:
                     self.wsSearch.cell(row=i, column=1).value = ""
             self.wb.save(self.path)
-            bot.send_message(message.from_user.id, "Успешно!", reply_markup=adminkbd())
+            bot.send_message(message.from_user.id, "Успешно!", reply_markup=adminkbd)
 
             self.Mans.delActs(name)  # Удаляем активности из БД людей
 
@@ -415,7 +348,7 @@ class SendMessage:
             return ws.max_row + 1
 
     def __init__(self):
-        self.path = '/Users/lalkalol/Desktop/bot/Data/test.xlsx'  # Путь к файлу
+        self.path = './Data/test.xlsx'  # Путь к файлу
         self.wb = load_workbook(self.path)  # Создаем книгу
         self.wsSearch = self.wb.active  # Рабочий лист
         self.maxrow = self.maxrowSearch(self.wsSearch)  # Узнаем максимальный ряд
@@ -427,7 +360,7 @@ class SendMessage:
 
     def send(self, message):
         if message.text == "Назад":
-            bot.send_message(message.from_user.id, text=OthersTexts.gettext('back'),reply_markup=adminkbd())
+            bot.send_message(message.from_user.id, text=OthersTexts.gettext('back'),reply_markup=adminkbd)
         else:
             group = []
             gr = message.text
@@ -445,12 +378,12 @@ class SendMessage:
 
     def send2(self, message, gr):
         if message.text == "Назад":
-            bot.send_message(message.from_user.id, text=OthersTexts.gettext('back'), reply_markup=adminkbd())
+            bot.send_message(message.from_user.id, text=OthersTexts.gettext('back'), reply_markup=adminkbd)
         else:
             self.text = message.text
             for i in range(0, len(self.group)):
                 bot.send_message(self.group[i], text =  self.text + '\n\nДля группы: ' + gr)
-            bot.send_message(message.from_user.id, "Успех!", reply_markup=adminkbd())
+            bot.send_message(message.from_user.id, "Успех!", reply_markup=adminkbd)
 
 
 class CodeCheck:
@@ -465,7 +398,7 @@ class CodeCheck:
             return ws.max_row + 1
 
     def __init__(self):
-        self.path = '/Users/lalkalol/Desktop/bot/Data/code.xlsx'
+        self.path = './Data/code.xlsx'
         self.codewb = load_workbook(self.path)
         self.codeSearch = self.codewb.active
         self.maxrow = self.maxrowSearch(self.codeSearch)
@@ -477,7 +410,7 @@ class CodeCheck:
 
     def checkcode(self, message):
         if message.text == "Назад":
-            bot.send_message(message.from_user.id, text=OthersTexts.gettext('back'),reply_markup=nonamekbd())
+            bot.send_message(message.from_user.id, text=OthersTexts.gettext('back'),reply_markup=nonamekbd)
         else:
             inputCode = message.text
             Man = MansDataBaseTG()
@@ -487,32 +420,25 @@ class CodeCheck:
                 bot.send_message(Man.ID, "Введи свое имя:")
                 bot.register_next_step_handler(message, self.MainDB.input_name)
             else:
-                bot.send_message(Man.ID, text="Ты ввел неверный код!", reply_markup=nonamekbd())
+                bot.send_message(Man.ID, text="Ты ввел неверный код!", reply_markup=nonamekbd)
 
 
 class CodeGen:
-    @staticmethod
-    def maxrowSearch(ws):
-        if ws.max_row == 1:
-            if ws.cell(row=1, column=1).value == "" or ws.cell(row=1, column=1).value == None:
-                return 1
-            else:
-                return 2
-        else:
-            return ws.max_row + 1
 
     def __init__(self):
-        self.path = '/Users/lalkalol/Desktop/bot/Data/code.xlsx'
+        self.path = './Data/code.xlsx'
         self.codewb = load_workbook(self.path)
         self.codeSearch = self.codewb.active
-        self.maxrow = self.maxrowSearch(self.codeSearch)
+        self.maxrow = 1
         self.now = datetime.datetime.now()
 
     def checkdate(self):
         while True:
             day = self.now.day
-            if self.codeSearch.cell(row=self.codeSearch.max_row, column=2) != str(day):
+            if str(self.codeSearch.cell(row=self.codeSearch.max_row, column=2).value) != str(day):
                 self.codegen()
+            else:
+                pass
             time.sleep(1800)
 
     def codegen(self):
@@ -520,6 +446,9 @@ class CodeGen:
         self.codeSearch.cell(row=self.codeSearch.max_row, column=2).value = self.now.day
         self.codeSearch.cell(row=self.codeSearch.max_row, column=1).value = code
         self.codewb.save(self.path)
+
+    def getcode(self):
+        return self.codeSearch.cell(row = self.codeSearch.max_row, column=1).value
 
 
 

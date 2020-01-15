@@ -1,7 +1,6 @@
 from openpyxl import load_workbook
 
 
-
 class getText:
 
     @staticmethod
@@ -26,7 +25,7 @@ class getText:
             return 4
 
     def __init__(self, man):
-        self.path = "/Users/lalkalol/Desktop/bot/Data/Texts.xlsx"
+        self.path = "./Data/Texts.xlsx"
         self.wb = load_workbook(self.path)
 
         self.index = self.Addindex(man)
