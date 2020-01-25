@@ -2,12 +2,13 @@ from openpyxl import load_workbook
 from random import randint
 import telebot
 from telebot import types
-from bot.config import *
+from config import *
 import datetime
 import time
-from bot.Telegram.keyboard import PupilTGkeyboards, AdminTGkeyboards, NonameTGKeyboards, backkbd
-from bot.modules.getText import getText
-
+from Telegram.keyboard import PupilTGkeyboards, AdminTGkeyboards, NonameTGKeyboards, backkbd
+from modules.getText import getText
+import pymysql
+from threading import Thread
 
 AdminTexts = getText("admin")
 PupilTexts = getText("pupil")
@@ -16,14 +17,15 @@ OthersTexts = getText("other")
 
 Unknown_command = OthersTexts.gettext("Unknown command")
 
+
 def start_kbd():
     st = types.ReplyKeyboardMarkup()
     row = types.KeyboardButton("/start")
     st.row(row)
     return st
 
-bot = telebot.TeleBot(f'{TG_TOKEN}')
 
+bot = telebot.TeleBot(f'{TG_TOKEN}')
 
 adminkbd = AdminTGkeyboards.admin_k()
 nonamekbd = NonameTGKeyboards.n_k()
@@ -50,13 +52,8 @@ class MansDataBase(object):
             return int(ws.max_row + 1)
 
     def __init__(self):
-        self.path = './Data/test.xlsx'  # Путь к файлу
-        self.wb = load_workbook(self.path)  # Создаем книгу
-        self.wsSearch = self.wb.active  # Рабочий лист
-        self.maxrow = self.maxrowSearch(self.wsSearch)  # Узнаем максимальный ряд
+        self.con = pymysql.connect('localhost', 'lalkalol_crochz', 'python', 'lalkalol_crochz')
 
-        self.name = ""
-        self.lastname = ""
         self.ID = ""
         self.man = ""
         self.acts = []
@@ -67,81 +64,70 @@ class MansDataBaseTG(MansDataBase):  # Датабаза людей
 
     def delActs(self, name):  # Функция удаляет активности
 
-        for i in range(1, self.maxrow):
-            if self.wsSearch.cell(row=i, column=5).value == name:
-                self.wsSearch.cell(row=i, column=5).value = ""
-        self.wb.save(self.path)
+        sql = f"UPDATE MainTableV1 SET acts = '' WHERE acts = %s"
 
-    def todb(self):  # Функция добавляет пользователя в датабазу
-        self.wsSearch.cell(row=self.maxrow, column=1).value = self.ID
-        self.wsSearch.cell(row=self.maxrow, column=2).value = "pupil"
-        self.wsSearch.cell(row=self.maxrow, column=3).value = self.name
-        self.wsSearch.cell(row=self.maxrow, column=4).value = self.lastname
-        self.wb.save(self.path)
-        bot.send_message(self.ID, "Успешно!", reply_markup=pupilkbd )
+        with self.con:
+            cur = self.con.cursor()
+            cur.execute(sql, name)
+
+    def todb(self, id):  # Функция добавляет пользователя в датабазу
+        self.ID = id
+        sql = f"INSERT INTO MainTableV1 VALUES(%s, 'pupil','','')"
+        with self.con:
+            cur = self.con.cursor()
+            cur.execute(sql, self.ID)
+
+        bot.send_message(self.ID, "Ты успешно зарегистрирован", reply_markup=pupilkbd)
 
     def identy(self, ID):  # Определяет статус человека, который написал сообщение
+        IdArray = []
+        ManArray = []
         status = "noname"
-        for i in range(1, self.maxrow):
-            value = self.wsSearch.cell(row=i, column=1).value
-            if value == ID:
-                return self.wsSearch.cell(row=i, column=2).value
+        sql = f"SELECT TgId, Man FROM MainTableV1 WHERE TgId = %s"
+        with self.con:
+            cur = self.con.cursor()
+            cur.execute(sql, ID)
+            rows = cur.fetchall()
+            for row in rows:
+                TgId, Man = row
+                IdArray.append(TgId)
+                ManArray.append(Man)
+        for i in range(0, len(IdArray)):
+            status = ManArray[i]
         return status
 
     def GetUserActs(self, ID):  # Возвращает информацию о всех активностях пользователя
-        activities = []
-        zero = []
-        for i in range(1, self.maxrow):
-            value = self.wsSearch.cell(row=i, column=1).value
-            if value == ID:
-                activities.append(self.wsSearch.cell(row=i, column=5).value)
-        self.nonone(activities)
-        for i in range(0, len(activities)):
-            if activities[i] == None:
-                activities[i] = ""
-        if zero == activities:
-            return []
-        else:
-            return self.nonone(activities)
+        actsArray = []
+        sql = f"SELECT acts FROM MainTableV1 WHERE TgId = %s"
+        with self.con:
+            cur = self.con.cursor()
+            cur.execute(sql, int(ID))
+            rows = cur.fetchall()
+            for row in rows:
+                acts = row[0]
+                actsArray.append(acts)
 
-    def getnames(self, ID):  # Возвращает имя пользователя
-        name_status = None
-        for i in range(1, self.maxrow):
-            value = self.wsSearch.cell(row=i, column=1).value
-            if value == ID:
-                name_status = self.wsSearch.cell(row=i, column=3).value
-        if name_status != None:
-            return name_status
-        return ""
+        return self.nonone(actsArray)
 
-    def getSnames(self, ID):  # Возвращает фамилию пользователя
-        z = ""
-        lastname_status = None
-        for i in range(1, self.maxrow):
-            value = self.wsSearch.cell(row=i, column=1).value
-            if value == ID:
-                lastname_status = self.wsSearch.cell(row=i, column=4).value
-        if lastname_status != None:
-            return lastname_status
-        return z
-
-    def getVkId(self,ID):
+    def getVkId(self, ID):
         VkId_status = ""
-        for i in range(1, self.maxrow):
-            value = self.wsSearch.cell(row=i, column=1).value
-            if value == ID:
-                VkId_status = self.wsSearch.cell(row=i, column=46).value
-        if VkId_status != None:
+        sql = f"SELECT VkId FROM MainTableV1 WHERE TgId = %s"
+        with self.con:
+            cur = self.con.cursor()
+            cur.execute(sql, int(ID))
+            rows = cur.fetchall()
+            for row in rows:
+                VkId_status = row[0]
+
+        if VkId_status != 0:
             return VkId_status
         else:
             return "Не указано"
 
-
     def subscribe(self, message):  # Подписка на активность
         if message.text == "Назад":
-            bot.send_message(message.from_user.id, text=OthersTexts.gettext('back'),reply_markup=pupilkbd)
+            bot.send_message(message.from_user.id, text=OthersTexts.gettext('back'), reply_markup=pupilkbd)
         else:
-            global RecRow
             id = message.from_user.id
             useracts = self.GetUserActs(id)
             c = True
@@ -152,123 +138,82 @@ class MansDataBaseTG(MansDataBase):  # Датабаза людей
             a = False
             if b:
                 if activ in useracts:
-                    bot.send_message(id, 'Ошибка! Ты уже зарегистрирован на эту активность', reply_markup=pupilkbd)
+                    bot.send_message(id, f'Ошибка! Ты уже зарегистрирован на активность «{activ}»',
+                                     reply_markup=pupilkbd)
                     c = False
                 if not activ in ActsDataBase().getallacts():
                     c = False
-                    bot.send_message(id, 'Ошибка! Такой активности не существует', reply_markup=pupilkbd)
+                    bot.send_message(id, f'Ошибка! Активности «{activ}» не существует', reply_markup=pupilkbd)
             if c:
-                for i in range(1, self.maxrow):
-                    if self.wsSearch.cell(row=i, column=1).value == id:
-                        if self.wsSearch.cell(row=i, column=5).value == "" or self.wsSearch.cell(row=i, column=5).value == None:
-                            a = True
-                            RecRow = i
-                if a:
-                    self.wsSearch.cell(row=RecRow, column=5).value = activ
-                else:
-                    self.wsSearch.cell(row=self.maxrow, column=1).value = id
-                    self.wsSearch.cell(row=self.maxrow, column=5).value = activ
-                    self.wsSearch.cell(row=self.maxrow, column=2).value = self.identy(id)
-                    self.wsSearch.cell(row=self.maxrow, column=3).value = self.getnames(id)
-                    self.wsSearch.cell(row=self.maxrow, column=4).value = self.getSnames(id)
-                    self.wsSearch.cell(row=self.maxrow, column=6).value = self.getVkId(id)
-                self.wb.save(self.path)
-                bot.send_message(id, 'Успешно!', reply_markup=pupilkbd)
+                with self.con:
+                    cur = self.con.cursor()
+                    self.VkId = self.getVkId(self.ID)
+                    if self.VkId == "Не указано":
+                        self.VkId = ""
+                    sql = f"INSERT INTO MainTableV1 VALUES(%s, 'pupil' ,%s , %s)"
+
+                    sqlt = [int(self.ID), activ, self.VkId]
+
+                    cur.execute(sql, sqlt)
+
+                bot.send_message(id, f"Ты подписался на активность «{activ}»", reply_markup=pupilkbd)
 
     def desub(self, message):  # Отписаться от активности
         if message.text == "Назад":
-            bot.send_message(message.from_user.id, text=OthersTexts.gettext('back'),reply_markup=pupilkbd)
-        else:
-            Man = MansDataBaseTG()
-
-            Man.ID = message.from_user.id
-            activ = message.text
-            Man.acts = self.GetUserActs(Man.ID)
-            if activ == "Отписаться от всех активностей":
-                for i in range(1, self.maxrow):
-                    if self.wsSearch.cell(row=i, column=1).value == Man.ID:
-                        self.wsSearch.cell(row=i, column=5).value = ""
-                        self.wb.save(self.path)
-                bot.send_message(Man.ID, "Успех!", reply_markup=pupilkbd)
-            elif activ in Man.acts:
-                for i in range(1, self.maxrow):
-                    if self.wsSearch.cell(i, 1).value == Man.ID:
-                        if self.wsSearch.cell(i, 5).value == activ:
-                            self.wsSearch.cell(i, 5).value = ""
-                            self.wb.save(self.path)
-                bot.send_message(Man.ID, "Успех!", reply_markup=pupilkbd)
-            else:
-                bot.send_message(Man.ID, "Ошибка! Ты не подписан на эту активность!", reply_markup=pupilkbd)
-
-    def input_name(self, message):  # Ввод имени при регистрации
-        self.ID = message.from_user.id
-        self.name = message.text
-        bot.send_message(message.from_user.id, "Введи свою фамилию:")
-        bot.register_next_step_handler(message, self.input_surname)
-
-    def input_surname(self, message):  # Ввод фамилию при регистрации
-        self.lastname = message.text
-        self.todb()
-
-    def addVk(self, message):  # Добавляем вк
-        if message.text == "Назад":
-            bot.send_message(message.from_user.id, text=OthersTexts.gettext('back'),reply_markup=pupilkbd())
+            bot.send_message(message.from_user.id, text=OthersTexts.gettext('back'), reply_markup=pupilkbd)
         else:
             self.ID = message.from_user.id
-            self.VkId = message.text
-            for i in range(1, self.maxrow):
-                if self.ID == self.wsSearch.cell(row=i, column=1).value:
-                    self.wsSearch.cell(row=i, column=6).value = self.VkId
-            self.wb.save(self.path)
-            bot.send_message(self.ID, "Успешно!", reply_markup=pupilkbd)
+            activ = message.text
+            self.acts = self.GetUserActs(self.ID)
 
-    def changeData(self, message):
-        if message.text == "Назад":
-            bot.send_message(message.from_user.id, text=OthersTexts.gettext('back'),reply_markup=pupilkbd)
-        elif message.text == "Имя":
-            bot.send_message(message.from_user.id, text="Введи свое имя:", reply_markup=backkbd())
-            bot.register_next_step_handler(message, self.changename)
-        elif message.text == "Фамилия":
-            bot.send_message(message.from_user.id, text="Введи свою фамилию:", reply_markup=backkbd())
-            bot.register_next_step_handler(message, self.changeSname)
-        elif message.text == "ВК":
-            bot.send_message(message.from_user.id, text="Введи ID, который дал тебе бот ВК:", reply_markup=backkbd())
-            bot.register_next_step_handler(message, self.changeVK)
+            self.VkId = self.getVkId(self.ID)
+            if self.VkId == "Не указано":
+                self.VkId = ""
 
-    def changename(self, message):
-        if message.text == "Назад":
-            bot.send_message(message.from_user.id, text=OthersTexts.gettext('back'),reply_markup=pupilkbd)
-        else:
-            self.name = message.text
-            for i in range(1, self.maxrow):
-                if self.wsSearch.cell(row=i,column=1).value == self.ID:
-                    self.wsSearch.cell(row=i, column=3).value = self.name
-            self.wb.save(self.path)
-            bot.send_message(self.ID, "Успешно!", reply_markup=pupilkbd())
+            if activ == "Отписаться от всех активностей":
+                sql = f"DELETE FROM MainTableV1 WHERE TgId = %s"
+                sqlt = self.ID
+            elif activ in self.acts:
+                sql = f"DELETE FROM MainTableV1 WHERE TgId = %s AND acts = %s"
+                sqlt = [self.ID, activ]
+            else:
+                bot.send_message(self.ID, "Ошибка! Ты не подписан на активность «{activ}»", reply_markup=pupilkbd)
+                return 0
 
-    def changeSname(self, message):
-        if message.text == "Назад":
-            bot.send_message(message.from_user.id, text=OthersTexts.gettext('back'),reply_markup=pupilkbd)
-        else:
-            self.lastname = message.text
-            for i in range(1, self.maxrow):
-                if self.wsSearch.cell(row=i, column=1).value == self.ID:
-                    self.wsSearch.cell(row=i, column=4).value = self.lastname
-            self.wb.save(self.path)
-            bot.send_message(self.ID, "Успешно!", reply_markup=pupilkbd)
+            with self.con:
+                cur = self.con.cursor()
+                cur.execute(sql, sqlt)
+                if self.identy(self.ID) == "noname":
+                    sql = f"INSERT INTO MainTableV1 VALUES(%s, 'pupil','', %s)"
+                    sqlt = [self.ID, self.getVkId(self.ID)]
+                    cur.execute(sql, sqlt)
+                if activ != "Отписаться от всех активностей":
+                    bot.send_message(self.ID, f"Ты отписался от активности «{activ}»", reply_markup=pupilkbd)
+                else:
+                    bot.send_message(self.ID, f"Ты отписался от всех активностей", reply_markup=pupilkbd)
 
     def changeVK(self, message):
+        self.ID = message.from_user.id
         if message.text == "Назад":
-            bot.send_message(message.from_user.id, text=OthersTexts.gettext('back'),reply_markup=pupilkbd)
+            bot.send_message(self.ID, text=OthersTexts.gettext('back'), reply_markup=pupilkbd)
         else:
-            self.VkId = message.text
-            for i in range(1, self.maxrow):
-                if self.wsSearch.cell(row=i, column=1).value == self.ID:
-                    self.wsSearch.cell(row=i, column=6).value = self.VkId
-            self.wb.save(self.path)
-            bot.send_message(self.ID, "Успешно!", reply_markup=pupilkbd)
+            if len(message.text) < 8 or len(message.text) > 10:
+                bot.send_message(self.ID, "Некорректный ID", reply_markup=pupilkbd)
+            else:
+                try:
+                    self.VkId = int(message.text)
+                    with self.con:
+                        cur = self.con.cursor()
+                        sql = f"UPDATE MainTableV1 SET VkId = %s WHERE TgId = %s"
+                        sqlt = [self.VkId, self.ID]
+                        cur.execute(sql, sqlt)
+                    bot.send_message(self.ID, "Успешная смена ВК", reply_markup=pupilkbd)
+                except ValueError:
+                    bot.send_message(self.ID, "Некорректный ID", reply_markup=pupilkbd)
+
 
 class ActsDataBase:  # Датабаза активностей
+
     @staticmethod
     def nonone(a):  # Удаление повторений в масссиве
         n = []
@@ -277,53 +222,47 @@ class ActsDataBase:  # Датабаза активностей
                 n.append(i)
         return n
 
-    @staticmethod
-    def maxrowSearch(ws):
-        if ws.max_row == 1:
-            if ws.cell(row=1, column=1).value == "" or ws.cell(row=1, column=1).value == None:
-                return 1
-            else:
-                return 2
-        else:
-            return ws.max_row + 1
-
     def __init__(self):
-        self.path = './Data/acts.xlsx'  # Путь к файлу
-        self.wb = load_workbook(self.path)  # Создаем книгу
-        self.wsSearch = self.wb.active  # Рабочий лист
-
-        self.maxrow = self.maxrowSearch(self.wsSearch)  # Узнаем максимальный ряд
+        self.con = pymysql.connect('localhost', 'lalkalol_crochz', 'python', 'lalkalol_crochz')  # Путь к файлу
 
         self.Mans = MansDataBaseTG()
 
-
     def getallacts(self):  # получаем все активности
         activities = []
-        for i in range(1, self.maxrow):
-            value = self.wsSearch.cell(row=i, column=1).value
-            if value != "" and value != None:
-                activities.append(value)
+        sql = "SELECT * FROM Acts"
+        with self.con:
+            cur = self.con.cursor()
+            cur.execute(sql)
+            rows = cur.fetchall()
+            for row in rows:
+                act = row[0]
+                activities.append(act)
+
         return self.nonone(activities)
 
     def add_act(self, message):  # Добавляем активность
         if message.text == "Назад":
-            bot.send_message(message.from_user.id, text=OthersTexts.gettext('back'),reply_markup=adminkbd)
+            bot.send_message(message.from_user.id, text=OthersTexts.gettext('back'), reply_markup=adminkbd)
         else:
             name = message.text
-            self.wsSearch.cell(row=self.maxrow, column=1).value = name
-            self.wb.save(self.path)
-            bot.send_message(message.from_user.id, "Успешно!", reply_markup=adminkbd)
+            sql = f"INSERT INTO Acts VALUES(%s)"
+            with self.con:
+                cur = self.con.cursor()
+                cur.execute(sql, name)
+            bot.send_message(message.from_user.id, f"Активность «{name}» добавлена", reply_markup=adminkbd)
 
-    def del_act(self, message):# Удаление активности
+    def del_act(self, message):  # Удаление активности
         if message.text == "Назад":
-            bot.send_message(message.from_user.id, text=OthersTexts.gettext('back'),reply_markup=adminkbd)
+            bot.send_message(message.from_user.id, text=OthersTexts.gettext('back'), reply_markup=adminkbd)
         else:
             name = message.text
-            for i in range(1, self.maxrow):
-                if self.wsSearch.cell(row=i, column=1).value == name:
-                    self.wsSearch.cell(row=i, column=1).value = ""
-            self.wb.save(self.path)
-            bot.send_message(message.from_user.id, "Успешно!", reply_markup=adminkbd)
+            sql = f"DELETE FROM Acts WHERE name = %s"
+
+            with self.con:
+                cur = self.con.cursor()
+                cur.execute(sql, name)
+
+            bot.send_message(message.from_user.id, f"Активность «{name}» удалена", reply_markup=adminkbd)
 
             self.Mans.delActs(name)  # Удаляем активности из БД людей
 
@@ -337,40 +276,32 @@ class SendMessage:
                 n.append(i)
         return n
 
-    @staticmethod
-    def maxrowSearch(ws):
-        if ws.max_row == 1:
-            if ws.cell(row=1, column=1).value == "" or ws.cell(row=1, column=1).value == None:
-                return 1
-            else:
-                return 2
-        else:
-            return ws.max_row + 1
-
     def __init__(self):
-        self.path = './Data/test.xlsx'  # Путь к файлу
-        self.wb = load_workbook(self.path)  # Создаем книгу
-        self.wsSearch = self.wb.active  # Рабочий лист
-        self.maxrow = self.maxrowSearch(self.wsSearch)  # Узнаем максимальный ряд
+        self.con = pymysql.connect('localhost', 'lalkalol_crochz', 'python', 'lalkalol_crochz')  # Путь к файлу
 
         self.text = ""
         self.group = []
 
-
-
     def send(self, message):
         if message.text == "Назад":
-            bot.send_message(message.from_user.id, text=OthersTexts.gettext('back'),reply_markup=adminkbd)
+            bot.send_message(message.from_user.id, text=OthersTexts.gettext('back'), reply_markup=adminkbd)
         else:
             group = []
             gr = message.text
             if gr == "Всем":
-                for i in range(1, self.maxrow):
-                   group.append(self.wsSearch.cell(row=i, column=1).value)
+                sql = "SELECT TgId FROM MainTableV1"
             else:
-                for i in range(1, self.maxrow):
-                    if self.wsSearch.cell(row=i, column=5).value == gr:
-                        group.append(self.wsSearch.cell(row=i, column=1).value)
+                sql = f"SELECT TgId FROM MainTableV1 WHERE acts = %s"
+
+            with self.con:
+                cur = self.con.cursor()
+                if gr == "Всем":
+                    cur.execute(sql)
+                else:
+                    cur.execute(sql, gr)
+                rows = cur.fetchall()
+                for row in rows:
+                    group.append(row[0])
 
             bot.send_message(message.from_user.id, "Введите сообщение:", reply_markup=backkbd())
             bot.register_next_step_handler(message, self.send2, gr)
@@ -382,8 +313,8 @@ class SendMessage:
         else:
             self.text = message.text
             for i in range(0, len(self.group)):
-                bot.send_message(self.group[i], text =  self.text + '\n\nДля группы: ' + gr)
-            bot.send_message(message.from_user.id, "Успех!", reply_markup=adminkbd)
+                bot.send_message(self.group[i], text=self.text + '\n\nДля группы: ' + gr)
+            bot.send_message(message.from_user.id, f"Сообщение отправлено активности «{gr}»", reply_markup=adminkbd)
 
 
 class CodeCheck:
@@ -410,15 +341,14 @@ class CodeCheck:
 
     def checkcode(self, message):
         if message.text == "Назад":
-            bot.send_message(message.from_user.id, text=OthersTexts.gettext('back'),reply_markup=nonamekbd)
+            bot.send_message(message.from_user.id, text=OthersTexts.gettext('back'), reply_markup=nonamekbd)
         else:
             inputCode = message.text
             Man = MansDataBaseTG()
 
             Man.ID = message.from_user.id
             if inputCode == self.code():
-                bot.send_message(Man.ID, "Введи свое имя:")
-                bot.register_next_step_handler(message, self.MainDB.input_name)
+                self.MainDB.todb(Man.ID)
             else:
                 bot.send_message(Man.ID, text="Ты ввел неверный код!", reply_markup=nonamekbd)
 
@@ -432,15 +362,6 @@ class CodeGen:
         self.maxrow = 1
         self.now = datetime.datetime.now()
 
-    def checkdate(self):
-        while True:
-            day = self.now.day
-            if str(self.codeSearch.cell(row=self.codeSearch.max_row, column=2).value) != str(day):
-                self.codegen()
-            else:
-                pass
-            time.sleep(1800)
-
     def codegen(self):
         code = randint(10000, 99999)
         self.codeSearch.cell(row=self.codeSearch.max_row, column=2).value = self.now.day
@@ -448,7 +369,13 @@ class CodeGen:
         self.codewb.save(self.path)
 
     def getcode(self):
-        return self.codeSearch.cell(row = self.codeSearch.max_row, column=1).value
+        return self.codeSearch.cell(row=self.codeSearch.max_row, column=1).value
 
-
-
+    def checkdate(self):
+        while True:
+            day = self.now.day
+            if str(self.codeSearch.cell(row=self.codeSearch.max_row, column=2).value) != str(day):
+                self.codegen()
+            else:
+                pass
+            time.sleep(300)

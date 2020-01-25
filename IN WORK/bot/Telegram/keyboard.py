@@ -1,5 +1,4 @@
 from telebot import types
-from bot.modules.getText import *
 
 AdminTexts = getText("admin")
 PupilTexts = getText("pupil")
@@ -15,9 +14,9 @@ class TGkeyboards(object):
 
     def __init__(self):
 
-        from bot.modules.function import ActsDataBase
+        from modules.function import ActsDataBase
         self.Acts = ActsDataBase()
-        from bot.modules.function import MansDataBaseTG
+        from modules.function import MansDataBaseTG
         self.Man = MansDataBaseTG()
 
 
@@ -100,15 +99,6 @@ class PupilTGkeyboards(TGkeyboards):
         pupil_kbd.row(row3)
         pupil_kbd.row(row4)
         return pupil_kbd
-
-    @staticmethod
-    def changekbd():
-        changekbd = types.ReplyKeyboardMarkup()
-        changekbd.row(types.KeyboardButton("Имя"))
-        changekbd.row(types.KeyboardButton("Фамилия"))
-        changekbd.row(types.KeyboardButton("ВК"))
-        return changekbd
-
 
 class NonameTGKeyboards(TGkeyboards):
     @staticmethod

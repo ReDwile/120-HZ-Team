@@ -12,3 +12,4 @@ def getToken(path):
 TG_TOKEN = getToken(tokenpath)
 
 TG_API_URL = ""
+
