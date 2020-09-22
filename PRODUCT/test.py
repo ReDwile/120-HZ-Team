@@ -39,5 +39,35 @@ while True:
             isitago = 1
 
             if not file1 and file1 is not None:
-                print("путь до файла 1")
+                print("путь до файла 1 не найден")
+            elif not file2 and file2 is not None:
+                print("путь до файла 2 не найден")
+            elif values[1] is not True and values[2] is not True and values[4] is not True:
+                print("error")
+            elif isitago == 1:
+                print("path has benn finded")
 
+                algos = []
+
+                if values[1]==True:
+                    algos.append('MD5')
+                if values[2] == True:
+                    algos.append('SHA1')
+                if values[4] == True:
+                    algos.append('SHA256')
+
+                filepaths=[]
+                filepaths.append(values[0])
+                filepaths.append(values[3])
+
+                print(f"programm using ${algos}")
+
+                for algo in algos:
+                    print(algo, ':')
+                    print(filepaths[0],':',hash(filepaths[0],algo))
+                    print(filepaths[1], ':', hash(filepaths[1], algo))
+
+                    if hash(filepaths[0],algo) == hash(filepaths[1], algo):
+                        print(f"files match for ${algo}")
+                    else:
+                        print("fauck you leatherman")
